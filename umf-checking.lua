@@ -21,7 +21,7 @@
 --	{ spec=<spec>, min=<number>, max=<number> },
 --	{ spec=<spec>, min=<number>, max=<number> } }, -- optional, default is no constraints on multiplicity
 --
---    dict_multi={
+--    multi={
 --      { spec=<spec>, min=<number>, max=<number> } }, -- optional, default is no constraints on multiplicity
 --       ...
 --    }
@@ -38,7 +38,6 @@ spec_spec = spec{
 
       type=spec{
 	 type='enum',
-	 optional=true,
 	 enum={'string', 'number', 'boolean', 'function', 'thread', 'table', 'enum', 
 	       function (x) return umf_is_a(x, Spec) end, },
       },
@@ -46,7 +45,6 @@ spec_spec = spec{
       enum=spec{
 	 type='table',
 	 sealed='dict',
-	 optional=true,
 	 array={spec{type='string'},
 		spec{type='boolean'},
 		spec{type='number'},
@@ -57,21 +55,18 @@ spec_spec = spec{
 
       predicates=spec{
 	 sealed='both',
-	 optional=true,
 	 array={spec{type='function'} },
       },
 
       sealed=spec{ type='enum', enum={'both', 'array', 'dict'} },
       
       dict=spec{ 
-	 optional=true,
 	 type='table', 
 	 sealed='array'
 	 dict={Spec},		-- all values must be of type Spec
       },
 
       array=spec{
-	 optional=true,
 	 type='table',
 	 sealed='dict',
 	 array={Spec}
