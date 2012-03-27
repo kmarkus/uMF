@@ -135,7 +135,7 @@ function TableSpec.check(self, obj, vres)
       local arr_spec = self.array or {}
       for _,sp in ipairs(arr_spec) do if sp:check(entry) then return end end
       if sealed then
-	 add_msg(vres, "err", "illegal entry '"..tostring(entry) .."' in array part")
+	 add_msg(vres, "err", "illegal/invalid entry '"..tostring(entry) .."' in array part")
 	 ret=false
       else
 	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
