@@ -122,7 +122,7 @@ end
 --- Validate an enum spec.
 function EnumSpec.check(self, obj, vres)
    if utils.table_has(self.legal_values, obj) then return true end
-   add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (enum: " .. table.concat(self.legal_values, ", ")..")")
+   add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (valid: " .. table.concat(self.legal_values, ", ")..")")
 end
 
 --- Validate a table spec.
@@ -214,7 +214,7 @@ end
 --- Print the validation results.
 function print_vres(vres)
    utils.foreach(function(mes) print(mes) end, vres.msgs)
-   print(tostring(vres.err) .. " errors, " .. tostring(vres.warn) .. " warnings, ".. tostring(vres.inf) .. " informational messages")
+   print(tostring(vres.err) .. " errors, " .. tostring(vres.warn) .. " warnings, ".. tostring(vres.inf) .. " informational messages.")
 end
 
 --- Check a specification against an object.

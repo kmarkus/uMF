@@ -9,25 +9,25 @@ TableSpec=umf_check.TableSpec
 ClassSpec=umf_check.ClassSpec
 
 --- Specification of a frame
-frame_spec = TableSpec:new{
+frame_spec = TableSpec{
    name='kdl_frame',
    sealed='both',
    
    dict={
-      M=TableSpec:new{
+      M=TableSpec{
 	 name='kdl_rotation',
 	 sealed='both',
 	 dict = { 
-	    X_x = NumberSpec:new{}, Y_x = NumberSpec:new{}, Z_x = NumberSpec:new{},
-	    X_y = NumberSpec:new{}, Y_y = NumberSpec:new{}, Z_y = NumberSpec:new{},
-	    X_z = NumberSpec:new{}, Y_z = NumberSpec:new{}, Z_z = NumberSpec:new{},
+	    X_x = NumberSpec{}, Y_x = NumberSpec{}, Z_x = NumberSpec{},
+	    X_y = NumberSpec{}, Y_y = NumberSpec{}, Z_y = NumberSpec{},
+	    X_z = NumberSpec{}, Y_z = NumberSpec{}, Z_z = NumberSpec{},
 	 },
       },
 
-      p=TableSpec:new{
+      p=TableSpec{
 	 name='kdl_vector',
 	 sealed='both',
-	 dict={ X = NumberSpec:new{}, Y = NumberSpec:new{}, Z = NumberSpec:new{} }
+	 dict={ X = NumberSpec{}, Y = NumberSpec{}, Z = NumberSpec{} }
       }
    }
 }
@@ -44,11 +44,11 @@ robot_spec = umf_check.ClassSpec{
    array={ NumberSpec{} },
 
    dict={
-      name = StringSpec:new{},
+      name = StringSpec{},
       location = frame_spec,
-      package = StringSpec:new{},
-      type = StringSpec:new{},
-      robot_type=EnumSpec:new{"industrial", "mobile", "aerial", "underwater"},
+      package = StringSpec{},
+      type = StringSpec{},
+      robot_type=EnumSpec{"industrial", "mobile", "aerial", "underwater"},
    },
 
    optional={'robo_type'},
