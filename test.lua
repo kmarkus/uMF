@@ -55,6 +55,22 @@ robot_spec = umf_check.ClassSpec{
 }
 robot_spec.array[#robot_spec.array+1]=BoolSpec{}
 
+foo_spec=TableSpec{
+   name='foo',
+   sealed='array',
+   
+   dict={__other={StringSpec{}, NumberSpec{}}},
+}
+
+a_foo={
+   a="string",
+   b=33,
+   c={},
+   d=function() end,
+}
+
+
+
 -- Sample Model:
 r1=Robot{
    name='youbot',
@@ -83,5 +99,5 @@ umf_check.check(r2, robot_spec)
    
 
    
-   
+umf_check.check(a_foo, foo_spec)
    

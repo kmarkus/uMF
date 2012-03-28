@@ -39,6 +39,10 @@ Spec=class("Spec")
 -- @return boolean return value meaning success
 function Spec.check(self, obj, vres) error("Spec:check invoked") end
 
+--- Check if obj is of the correct type.
+-- This does not mean it is validated.
+function Spec.is_a(self, obj, vres) error("Spec:is_a invoked") end
+
 NumberSpec=class("NumberSpec", Spec)
 StringSpec=class("StringSpec", Spec)
 BoolSpec=class("BoolSpec", Spec)
@@ -77,7 +81,11 @@ function vres_pop_context(vres)
    vres.context[#vres.context] = nil
 end
 
---- Validate a number spec.
+--- Number spec.
+function NumberSpec.is_a(self, obj)
+   return type(obj) == "number"
+end
+
 function NumberSpec.check(self, obj, vres)
    log("checking number spec", obj)
    local t = type(obj)
@@ -142,21 +150,37 @@ function TableSpec.check(self, obj, vres)
       end
    end
 
+   local function is_a_valid_spec(entry, spec_tab)
+      for _,spec in ipairs(spec_tab) do
+	 if spec:check(entry) then return true end
+      end
+      return false
+   end
+
    local function check_dict_entry(entry, key)
-      if key=='class' then return end -- middleclass class field
+      if key=='class' or key=='__other_values' then return end
       vres_push_context(vres, key)
+
       local sealed = self.sealed == 'both' or self.sealed=='dict'
 
       if sealed and not self.dict[key] then
 	 add_msg(vres, "err", "unknown dict field '"..tostring(key).."' of type "..tostring(entry).."found in sealed table")
 	 ret=false
       elseif not sealed and not self.dict[key] then
-	 -- ignore it
-	 add_msg(vres, "info", "ignoring unkown field "..key)
-	 return
+	 -- do we have a __other table to comply with?
+	 if self.dict.__other then
+	    if not is_a_valid_spec(entry, self.dict.__other) then
+	       add_msg(vres, "err", "non legal value '"..tostring(entry).." of key '"..key.."' in unsealed dict")
+	       ret=false
+	    end
+	 else
+	    -- ignore it
+	    add_msg(vres, "info", "ignoring unkown field "..key)
+	 end
+      else
+	 -- known key, check it.
+	 if not self.dict[key]:check(entry, vres) then ret=false end
       end
-      -- known key, check it.
-      if not self.dict[key]:check(entry, vres) then ret=false end
       vres_pop_context(vres)
       return
    end
@@ -167,7 +191,7 @@ function TableSpec.check(self, obj, vres)
       nopts={}
       local optional=self.optional or {}
       for field,spec in pairs(self.dict) do
-	 if not utils.table_has(optional, field) then 
+	 if field~='__other' and not utils.table_has(optional, field) then
 	    nopts[#nopts+1] = field
 	 end
       end

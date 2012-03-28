@@ -24,19 +24,25 @@
 --    }
 -- }
 
+NumberSpec=umf_check.NumberSpec
+StringSpec=umf_check.StringSpec
+BoolSpec=umf_check.BoolSpec
+EnumSpec=umf_check.EnumSpec
+TableSpec=umf_check.TableSpec
+ClassSpec=umf_check.ClassSpec
+
 -- Metacircular spec of spec, howdee!
 spec_spec = spec{
    name='spec',
-   type=Spec,
+   type=ClassSpec,
    sealed=both,
    
    dict={
-      name=spec{ type='string' },
+      name=StringSpec{},
 
-      type=spec{
-	 type='enum',
-	 enum={'string', 'number', 'boolean', 'function', 'thread', 'table', 'enum', 
-	       function (x) return umf.instanceOf(x, Spec) end, },
+      type=EnumSpec{
+	 'string', 'number', 'boolean', 'function', 'thread', 'table', 'enum', 
+	 function (x) return umf.instanceOf(x, Spec) end, 
       },
 
       enum=spec{
