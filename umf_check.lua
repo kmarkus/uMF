@@ -37,7 +37,13 @@ Spec=class("Spec")
 -- @param obj object to validate
 -- @param vres validation result structure (optional)
 -- @return boolean return value meaning success
-function Spec.check(self, obj, vres) error("Spec:check invoked") end
+function Spec.check(self, obj, vres) 
+   if not umf.instanceOf(Spec, obj) then
+      add_msg(vres, "err", tostring(obj).." not an instance of "..tostring(self.type))
+      return false
+   end
+   return true
+end
 
 --- Check if obj is of the correct type.
 -- This does not mean it is validated.
@@ -227,7 +233,7 @@ function ClassSpec.check(self, obj, vres)
    log("validating class spec of type " .. self.name)
    vres_push_context(vres, self.name)
    if not umf.instanceOf(self.type, obj) then
-      add_msg(vres, "err", " not of Class '"..self.type.name.."'")
+      add_msg(vres, "err", tostring(obj) .." not an instance of '"..tostring(self.type).."'")
       return false
    end
    local res=TableSpec.check(self, obj, vres)

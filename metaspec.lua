@@ -32,47 +32,19 @@ TableSpec=umf_check.TableSpec
 ClassSpec=umf_check.ClassSpec
 
 -- Metacircular spec of spec, howdee!
-spec_spec = spec{
-   name='spec',
-   type=ClassSpec,
+metaspec = ClassSpec{
+   name='metaspec',
    sealed=both,
    
    dict={
       name=StringSpec{},
+      sealed=EnumSpec{"both", "dict", "array"},
+      optional=StringSpec{},
+      __other={umf_check.Spec{}}
+   },
 
-      type=EnumSpec{
-	 'string', 'number', 'boolean', 'function', 'thread', 'table', 'enum', 
-	 function (x) return umf.instanceOf(x, Spec) end, 
-      },
+   optional={'name'},
 
-      enum=spec{
-	 type='table',
-	 sealed='dict',
-	 array={spec{type='string'},
-		spec{type='boolean'},
-		spec{type='number'},
-		spec{type='function'} } 
-      },
+   array={umf_check.Spec{}},
 
-      optional=spec{ type='enum', enum={true, false} },
-
-      predicates=spec{
-	 sealed='both',
-	 array={spec{type='function'} },
-      },
-
-      sealed=spec{ type='enum', enum={'both', 'array', 'dict'} },
-      
-      dict=spec{ 
-	 type='table', 
-	 sealed='array'
-	 dict={Spec},		-- all values must be of type Spec
-      },
-
-      array=spec{
-	 type='table',
-	 sealed='dict',
-	 array={Spec}
-      },
-   }
-}		
+}

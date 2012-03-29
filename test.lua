@@ -8,6 +8,38 @@ EnumSpec=umf_check.EnumSpec
 TableSpec=umf_check.TableSpec
 ClassSpec=umf_check.ClassSpec
 
+
+-- Metacircular spec of spec, howdee!
+metaspec = ClassSpec{
+   name='metaspec',
+   type=umf_check.Spec,
+   sealed='both',
+   
+   dict={
+      name=StringSpec{},
+      sealed=EnumSpec{"both", "dict", "array"},
+      dict=TableSpec{
+	 sealed={},
+	 dict={ __other=TableSpec{umf_check.Spec{}} },
+	 array={umf_check.Spec{}},
+      },
+      optional=TableSpec{
+	 sealed='both',
+	 array={StringSpec{}},
+	 dict={},
+      },
+
+      -- type=ClassSpec{name="Object", type=umf.Object},
+
+      array=TableSpec{
+	 sealed='both',
+	 dict={},
+	 array={umf_check.Spec{}},
+      },
+   },
+   optional={"array", "dict", "optional"},
+}
+
 --- Specification of a frame
 frame_spec = TableSpec{
    name='kdl_frame',
@@ -94,10 +126,17 @@ r2=Robot{
 }
 
 
+print("checking valid robot_spec:")
 umf_check.check(r1, robot_spec)
-umf_check.check(r2, robot_spec)
-   
 
-   
+print("checking foobared robot_spec:")
+umf_check.check(r2, robot_spec)
+
+print("checking foo against foo_spec:")
 umf_check.check(a_foo, foo_spec)
-   
+
+print("checking frame_spec against metaspec")   
+umf_check.check(frame_spec, metaspec)
+
+print("checking metaspec against metaspec (autsch)")
+umf_check.check(metaspec, metaspec)
