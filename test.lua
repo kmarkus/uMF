@@ -7,19 +7,26 @@ BoolSpec=umf_check.BoolSpec
 EnumSpec=umf_check.EnumSpec
 TableSpec=umf_check.TableSpec
 ClassSpec=umf_check.ClassSpec
+ObjectSpec=umf_check.ObjectSpec
 
 
 -- Metacircular spec of spec, howdee!
-metaspec = ClassSpec{
+metaspec = ObjectSpec{
    name='metaspec',
    type=umf_check.Spec,
    sealed='both',
-   
+
+   -- this is what the body of a spec might look like:
    dict={
       name=StringSpec{},
-      sealed=EnumSpec{"both", "dict", "array"},
+      sealed=EnumSpec{"both", "dict", "array", false},
+      type=ClassSpec{ name='metaspec2', type=umf.Object, sealed=false, dict={} },
+
+      -- it may have a dict field, described by the following
+      -- TableSpec:
       dict=TableSpec{
-	 sealed={},
+	 sealed={}, -- true?
+	 -- any field should be an instance of Spec
 	 dict={ __other=TableSpec{umf_check.Spec{}} },
 	 array={umf_check.Spec{}},
       },
@@ -37,19 +44,19 @@ metaspec = ClassSpec{
 	 array={umf_check.Spec{}},
       },
    },
-   optional={"array", "dict", "optional"},
+   optional={"array", "dict", "optional", "type"},
 }
 
 --- Specification of a frame
 frame_spec = TableSpec{
    name='kdl_frame',
    sealed='both',
-   
+
    dict={
       M=TableSpec{
 	 name='kdl_rotation',
 	 sealed='both',
-	 dict = { 
+	 dict = {
 	    X_x = NumberSpec{}, Y_x = NumberSpec{}, Z_x = NumberSpec{},
 	    X_y = NumberSpec{}, Y_y = NumberSpec{}, Z_y = NumberSpec{},
 	    X_z = NumberSpec{}, Y_z = NumberSpec{}, Z_z = NumberSpec{},
@@ -68,7 +75,7 @@ Robot=umf.class("Robot")
 Foo=umf.class("Foo")
 
 -- Robot spec
-robot_spec = umf_check.ClassSpec{
+robot_spec = umf_check.ObjectSpec{
    name='itasc_robot',
    type=Robot,
    sealed='both',
@@ -90,7 +97,7 @@ robot_spec.array[#robot_spec.array+1]=BoolSpec{}
 foo_spec=TableSpec{
    name='foo',
    sealed='array',
-   
+
    dict={__other={StringSpec{}, NumberSpec{}}},
 }
 
@@ -126,17 +133,21 @@ r2=Robot{
 }
 
 
-print("checking valid robot_spec:")
+print("\nchecking valid robot_spec:")
 umf_check.check(r1, robot_spec)
 
-print("checking foobared robot_spec:")
+print("\nchecking erronous robot_spec:")
 umf_check.check(r2, robot_spec)
 
-print("checking foo against foo_spec:")
+print("\nchecking foo against foo_spec:")
 umf_check.check(a_foo, foo_spec)
 
-print("checking frame_spec against metaspec")   
+print("\nchecking frame_spec against metaspec")
 umf_check.check(frame_spec, metaspec)
 
-print("checking metaspec against metaspec (autsch)")
+print("\nchecking robot_spec against metaspec")
+umf_check.check(robot_spec, metaspec)
+
+
+print("\nchecking metaspec against metaspec (autsch)")
 umf_check.check(metaspec, metaspec)

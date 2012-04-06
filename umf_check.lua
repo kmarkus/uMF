@@ -37,7 +37,7 @@ Spec=class("Spec")
 -- @param obj object to validate
 -- @param vres validation result structure (optional)
 -- @return boolean return value meaning success
-function Spec.check(self, obj, vres) 
+function Spec.check(self, obj, vres)
    if not umf.instanceOf(Spec, obj) then
       add_msg(vres, "err", tostring(obj).." not an instance of "..tostring(self.type))
       return false
@@ -55,6 +55,7 @@ BoolSpec=class("BoolSpec", Spec)
 EnumSpec=class("EnumSpec", Spec)
 TableSpec=class("TableSpec", Spec)
 ClassSpec=class("ClassSpec", TableSpec)
+ObjectSpec=class("ObjectSpec", TableSpec)
 
 --- Add an error to the validation result struct.
 -- @param validation structure
@@ -95,7 +96,7 @@ end
 function NumberSpec.check(self, obj, vres)
    log("checking number spec", obj)
    local t = type(obj)
-   if t ~= "number" then 
+   if t ~= "number" then
       add_msg(vres, "err", "not a number but a " ..t)
       return false
    end
@@ -149,65 +150,66 @@ function TableSpec.check(self, obj, vres)
       local arr_spec = self.array or {}
       for _,sp in ipairs(arr_spec) do if sp:check(entry) then return end end
       if sealed then
-	 add_msg(vres, "err", "illegal/invalid entry '"..tostring(entry) .."' in array part")
-	 ret=false
+     add_msg(vres, "err", "illegal/invalid entry '"..tostring(entry) .."' in array part")
+     ret=false
       else
-	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
+     add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
       end
    end
 
    local function is_a_valid_spec(entry, spec_tab)
       for _,spec in ipairs(spec_tab) do
-	 if spec:check(entry) then return true end
+     if spec:check(entry) then return true end
       end
       return false
    end
 
    local function check_dict_entry(entry, key)
-      if key=='class' or key=='__other_values' then return end
+      if key=='class' or key=='__other' then return end
       vres_push_context(vres, key)
 
       local sealed = self.sealed == 'both' or self.sealed=='dict'
 
       if sealed and not self.dict[key] then
-	 add_msg(vres, "err", "unknown dict field '"..tostring(key).."' of type "..tostring(entry).."found in sealed table")
-	 ret=false
+     add_msg(vres, "err", "unknown dict field '"..tostring(key).."' of type "..tostring(entry).." found in sealed table")
+     ret=false
       elseif not sealed and not self.dict[key] then
-	 -- do we have a __other table to comply with?
-	 if self.dict.__other then
-	    if not is_a_valid_spec(entry, self.dict.__other) then
-	       add_msg(vres, "err", "non legal value '"..tostring(entry).." of key '"..key.."' in unsealed dict")
-	       ret=false
-	    end
-	 else
-	    -- ignore it
-	    add_msg(vres, "info", "ignoring unkown field "..key)
-	 end
+     -- do we have a __other table to comply with?
+     -- tbd: we check wether it is a spec, but not if it is valid?!
+     if self.dict.__other then
+        if not is_a_valid_spec(entry, self.dict.__other) then
+           add_msg(vres, "err", "non legal value '"..tostring(entry).." of key '"..key.."' in unsealed dict")
+           ret=false
+        end
+     else
+        -- ignore it
+        add_msg(vres, "inf", "ignoring unkown field "..key)
+     end
       else
-	 -- known key, check it.
-	 if not self.dict[key]:check(entry, vres) then ret=false end
+     -- known key, check it.
+     if not self.dict[key]:check(entry, vres) then ret=false end
       end
       vres_pop_context(vres)
       return
    end
-   
+
    -- Check that all non optional dict entries are there
    local function check_dict_optionals(dct)
       -- build a list of non-optionals
       nopts={}
       local optional=self.optional or {}
       for field,spec in pairs(self.dict) do
-	 if field~='__other' and not utils.table_has(optional, field) then
-	    nopts[#nopts+1] = field
-	 end
+     if field~='__other' and not utils.table_has(optional, field) then
+        nopts[#nopts+1] = field
+     end
       end
 
       -- check all non optionals are defined
       for _,nopt_field in ipairs(nopts) do
-	 if not dct[nopt_field] then
-	    add_msg(vres, "err", "non-optional field '"..nopt_field.."' missing")
-	    ret=false
-	 end
+     if not dct[nopt_field] then
+        add_msg(vres, "err", "non-optional field '"..nopt_field.."' missing")
+        ret=false
+     end
       end
    end
 
@@ -215,11 +217,11 @@ function TableSpec.check(self, obj, vres)
 
    -- check we have a table
    local t = type(obj)
-   if t ~= "table" then 
+   if t ~= "table" then
       add_msg(vres, "err", "not a table but a " ..t)
       ret=false
    end
-   
+
    local arr,dct = table_split(obj)
 
    utils.foreach(function (e) check_array_entry(e) end, arr)
@@ -232,14 +234,30 @@ end
 function ClassSpec.check(self, obj, vres)
    log("validating class spec of type " .. self.name)
    vres_push_context(vres, self.name)
-   if not umf.instanceOf(self.type, obj) then
-      add_msg(vres, "err", tostring(obj) .." not an instance of '"..tostring(self.type).."'")
+
+   -- classes are not the same or obj a subclass
+   if not (self.type.name == obj.name or umf.subclassOf(self.type, obj)) then
+      add_msg(vres, "err", "'"..tostring(obj) .."' not of class '"..tostring(self.type).."'")
       return false
    end
    local res=TableSpec.check(self, obj, vres)
    vres_pop_context(vres)
    return res
 end
+
+--- Check an object spec.
+function ObjectSpec.check(self, obj, vres)
+   log("validating object spec of type " .. self.name)
+   vres_push_context(vres, self.name)
+   if not umf.instanceOf(self.type, obj) then
+      add_msg(vres, "err", "'".. tostring(obj) .."' not an instance of '"..tostring(self.type).."'")
+      return false
+   end
+   local res=TableSpec.check(self, obj, vres)
+   vres_pop_context(vres)
+   return res
+end
+
 
 --- Print the validation results.
 function print_vres(vres)
