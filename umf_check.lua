@@ -150,16 +150,16 @@ function TableSpec.check(self, obj, vres)
       local arr_spec = self.array or {}
       for _,sp in ipairs(arr_spec) do if sp:check(entry) then return end end
       if sealed then
-     add_msg(vres, "err", "illegal/invalid entry '"..tostring(entry) .."' in array part")
-     ret=false
+	 add_msg(vres, "err", "illegal/invalid entry '"..tostring(entry) .."' in array part")
+	 ret=false
       else
-     add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
+	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
       end
    end
 
    local function is_a_valid_spec(entry, spec_tab)
       for _,spec in ipairs(spec_tab) do
-     if spec:check(entry) then return true end
+	 if spec:check(entry) then return true end
       end
       return false
    end
@@ -171,23 +171,23 @@ function TableSpec.check(self, obj, vres)
       local sealed = self.sealed == 'both' or self.sealed=='dict'
 
       if sealed and not self.dict[key] then
-     add_msg(vres, "err", "unknown dict field '"..tostring(key).."' of type "..tostring(entry).." found in sealed table")
-     ret=false
+	 add_msg(vres, "err", "unknown dict field '"..tostring(key).."' of type "..tostring(entry).." found in sealed table")
+	 ret=false
       elseif not sealed and not self.dict[key] then
-     -- do we have a __other table to comply with?
-     -- tbd: we check wether it is a spec, but not if it is valid?!
-     if self.dict.__other then
-        if not is_a_valid_spec(entry, self.dict.__other) then
-           add_msg(vres, "err", "non legal value '"..tostring(entry).." of key '"..key.."' in unsealed dict")
-           ret=false
-        end
-     else
-        -- ignore it
-        add_msg(vres, "inf", "ignoring unkown field "..key)
-     end
+	 -- do we have a __other table to comply with?
+	 -- tbd: we check wether it is a spec, but not if it is valid?!
+	 if self.dict.__other then
+	    if not is_a_valid_spec(entry, self.dict.__other) then
+	       add_msg(vres, "err", "non legal value '"..tostring(entry).." of key '"..key.."' in unsealed dict")
+	       ret=false
+	    end
+	 else
+	    -- ignore it
+	    add_msg(vres, "inf", "ignoring unkown field "..key)
+	 end
       else
-     -- known key, check it.
-     if not self.dict[key]:check(entry, vres) then ret=false end
+	 -- known key, check it.
+	 if not self.dict[key]:check(entry, vres) then ret=false end
       end
       vres_pop_context(vres)
       return
@@ -199,17 +199,17 @@ function TableSpec.check(self, obj, vres)
       nopts={}
       local optional=self.optional or {}
       for field,spec in pairs(self.dict) do
-     if field~='__other' and not utils.table_has(optional, field) then
-        nopts[#nopts+1] = field
-     end
+	 if field~='__other' and not utils.table_has(optional, field) then
+	    nopts[#nopts+1] = field
+	 end
       end
 
       -- check all non optionals are defined
       for _,nopt_field in ipairs(nopts) do
-     if not dct[nopt_field] then
-        add_msg(vres, "err", "non-optional field '"..nopt_field.."' missing")
-        ret=false
-     end
+	 if not dct[nopt_field] then
+	    add_msg(vres, "err", "non-optional field '"..nopt_field.."' missing")
+	    ret=false
+	 end
       end
    end
 
