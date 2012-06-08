@@ -32,6 +32,11 @@ end
 -- Specifications
 Spec=class("Spec")
 
+function Spec.initialize(self, t)
+   umf.Object.initialize(self, t)
+   self.name = self.name or ""
+end
+
 --- Check if object complies to spec.
 -- @param self spec object
 -- @param obj object to validate
@@ -131,6 +136,7 @@ end
 
 --- Initialize an enum spec.
 function EnumSpec.initialize(self, t)
+   Spec.initialize(self, t)
    self.legal_values=t
 end
 
@@ -138,6 +144,14 @@ end
 function EnumSpec.check(self, obj, vres)
    if utils.table_has(self.legal_values, obj) then return true end
    add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (valid: " .. table.concat(self.legal_values, ", ")..")")
+end
+
+--- TableSpec contstructor.
+-- just used to set some defaults.
+function TableSpec.initialize(self, t)
+   Spec.initialize(self, t)
+   self.dict = self.dict or {}
+   self.array = self.array or {}
 end
 
 --- Validate a table spec.
