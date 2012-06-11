@@ -32,18 +32,13 @@ end
 -- Specifications
 Spec=class("Spec")
 
-function Spec.initialize(self, t)
-   umf.Object.initialize(self, t)
-   self.name = self.name or ""
-end
-
 --- Check if object complies to spec.
 -- @param self spec object
 -- @param obj object to validate
 -- @param vres validation result structure (optional)
 -- @return boolean return value meaning success
 function Spec.check(self, obj, vres)
-   if not umf.instanceOf(Spec, obj) then
+   if not umf.instance_of(Spec, obj) then
       add_msg(vres, "err", tostring(obj).." not an instance of "..tostring(self.type))
       return false
    end
@@ -143,24 +138,10 @@ function BoolSpec.check(self, obj, vres)
    return false
 end
 
---- Initialize an enum spec.
-function EnumSpec.initialize(self, t)
-   Spec.initialize(self, t)
-   self.legal_values=t
-end
-
 --- Validate an enum spec.
 function EnumSpec.check(self, obj, vres)
-   if utils.table_has(self.legal_values, obj) then return true end
-   add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (valid: " .. table.concat(self.legal_values, ", ")..")")
-end
-
---- TableSpec contstructor.
--- just used to set some defaults.
-function TableSpec.initialize(self, t)
-   Spec.initialize(self, t)
-   self.dict = self.dict or {}
-   self.array = self.array or {}
+   if utils.table_has(self, obj) then return true end
+   add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (valid: " .. table.concat(self, ", ")..")")
 end
 
 --- Validate a table spec.
@@ -272,7 +253,7 @@ end
 function ObjectSpec.check(self, obj, vres)
    log("validating object spec of type " .. self.name)
    vres_push_context(vres, self.name)
-   if not umf.instanceOf(self.type, obj) then
+   if not umf.instance_of(self.type, obj) then
       add_msg(vres, "err", "'".. tostring(obj) .."' not an instance of '"..tostring(self.type).."'")
       return false
    end
@@ -290,7 +271,7 @@ end
 
 --- Check a specification against an object.
 function check(obj, spec)
-   assert(umf.instanceOf(Spec, spec), "check: invalid spec")
+   assert(umf.instance_of(Spec, spec), "check: invalid spec")
    local vres = { msgs={}, err=0, warn=0, inf=0 }
 
    spec:check(obj, vres)

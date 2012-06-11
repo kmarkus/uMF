@@ -54,7 +54,7 @@ function subclass_of(sc, c)
 end
 
 --- Check if obj is an instance of class.
-function instance_of(obj, klass)
+function instance_of(klass, obj)
    if not klass then return false end
    local c = obj:class()
    if c == klass then return true
