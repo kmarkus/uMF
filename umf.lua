@@ -15,7 +15,7 @@ function Object:new(t)
 end
 
 function Object:type() return 'Object' end
-function Object:tostring() return "class '"..self:type() end
+function Object:tostring() return "Class '"..self:type().."'" end
 function Object:class() return Object end
 function Object:super() return false end
 setmetatable(Object, { __call=Object.new }) -- just to be consistent
