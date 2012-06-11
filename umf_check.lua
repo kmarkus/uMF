@@ -54,6 +54,7 @@ end
 -- This does not mean it is validated.
 function Spec.is_a(self, obj, vres) error("Spec:is_a invoked") end
 
+AnySpec=class("AnySpec", Spec)
 NumberSpec=class("NumberSpec", Spec)
 StringSpec=class("StringSpec", Spec)
 BoolSpec=class("BoolSpec", Spec)
@@ -79,6 +80,8 @@ local function add_msg(vres, level, msg)
 end
 
 --- Push error message context.
+-- @param vres validation result table
+-- @param field current context in form of table field.
 function vres_push_context(vres, field)
    if not vres then return end
    vres.context=vres.context or {}
@@ -86,11 +89,17 @@ function vres_push_context(vres, field)
 end
 
 --- Pop error message context.
+-- @param vres validation result table
 function vres_pop_context(vres)
    if not vres then return end
    vres.context=vres.context or {}
    if #vres.context <= 0 then error("vres pop <= 0") end
    vres.context[#vres.context] = nil
+end
+
+--- True as long it is not nil.
+function AnySpec.check(self, obj, vres)
+   return obj==nil
 end
 
 --- Number spec.
