@@ -18,7 +18,7 @@ function Object:type() return 'Object' end
 function Object:tostring() return "Class '"..self:type().."'" end
 function Object:class() return Object end
 function Object:super() return false end
-setmetatable(Object, { __call=Object.new }) -- just to be consistent
+setmetatable(Object, { __call=Object.new, __tostring=Object.tostring }) -- just to be consistent
 
 --- Create a new class.
 function class(name, base)

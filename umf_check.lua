@@ -53,6 +53,7 @@ AnySpec=class("AnySpec", Spec)
 NumberSpec=class("NumberSpec", Spec)
 StringSpec=class("StringSpec", Spec)
 BoolSpec=class("BoolSpec", Spec)
+FunctionSpec=class("FunctionSpec", Spec)
 EnumSpec=class("EnumSpec", Spec)
 TableSpec=class("TableSpec", Spec)
 ClassSpec=class("ClassSpec", TableSpec)
@@ -135,6 +136,15 @@ function BoolSpec.check(self, obj, vres)
    local t = type(obj)
    if t == "boolean" then return true end
    add_msg(vres, "err", "not a string but a " ..t)
+   return false
+end
+
+--- Validate a function spec.
+function FunctionSpec(self, obj, vres)
+   log("checking function spec", obj)
+   local t = type(obj)
+   if t == "function" then return true end
+   add_msg(vres, "err", "not a function but a " ..t)
    return false
 end
 
@@ -240,7 +250,8 @@ function ClassSpec.check(self, obj, vres)
    vres_push_context(vres, self.name)
 
    -- classes are not the same or obj a subclass
-   if not (self.type.name == obj.name or umf.subclassOf(self.type, obj)) then
+   -- if not (self:type() == obj:type().name or umf.subclassOf(self.type, obj)) then
+   if not umf.subclass_of(obj:class(), self.type) then
       add_msg(vres, "err", "'"..tostring(obj) .."' not of class '"..tostring(self.type).."'")
       return false
    end
