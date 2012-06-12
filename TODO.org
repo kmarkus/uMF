@@ -1,0 +1,6 @@
+#+STARTUP: showall
+
+* TODO array part: how to distinguish between invalid and illegal type?
+  
+* TODO get rid of "dependency" on middleclass?
+  -> Replace with check function?

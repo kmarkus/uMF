@@ -42,6 +42,7 @@ function class(name, base)
    -- Create Constructor
    function klass_cops:new(t)
       local newobj = t or {}
+      if klass_iops.init then klass_iops.init(newobj) end
       setmetatable( newobj, { class=klass, __index=klass_iops })
       setmetatable( klass_iops, { __index=base:iops() })
       return newobj

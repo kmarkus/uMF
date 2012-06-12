@@ -154,6 +154,11 @@ function EnumSpec.check(self, obj, vres)
    add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (valid: " .. table.concat(self, ", ")..")")
 end
 
+function TableSpec.init(t)
+   t.dict = t.dict or {}
+   t.array = t.array or {}
+end
+
 --- Validate a table spec.
 function TableSpec.check(self, obj, vres)
    local ret=true
@@ -245,17 +250,17 @@ function TableSpec.check(self, obj, vres)
 end
 
 --- Check a class spec.
-function ClassSpec.check(self, obj, vres)
+function ClassSpec.check(self, c, vres)
    log("validating class spec of type " .. self.name)
    vres_push_context(vres, self.name)
 
    -- classes are not the same or obj a subclass
    -- if not (self:type() == obj:type().name or umf.subclassOf(self.type, obj)) then
-   if not umf.subclass_of(obj:class(), self.type) then
-      add_msg(vres, "err", "'"..tostring(obj) .."' not of class '"..tostring(self.type).."'")
+   if not umf.uoo_type(c)=='class' or not umf.subclass_of(c, self.type) then
+      add_msg(vres, "err", "'"..tostring(c) .."' not of (sub-)class '"..tostring(self.type).."'")
       return false
    end
-   local res=TableSpec.check(self, obj, vres)
+   local res=TableSpec:iops().check(self, c, vres)
    vres_pop_context(vres)
    return res
 end
@@ -268,7 +273,7 @@ function ObjectSpec.check(self, obj, vres)
       add_msg(vres, "err", "'".. tostring(obj) .."' not an instance of '"..tostring(self.type).."'")
       return false
    end
-   local res=TableSpec.check(self, obj, vres)
+   local res=TableSpec:iops().check(self, obj, vres)
    vres_pop_context(vres)
    return res
 end
