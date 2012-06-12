@@ -1,7 +1,7 @@
---- micro-OO: classes, object, simple inheritance.
--- Just enough required for umf modeling.
+--- micro-OO: classes, objects, simple inheritance, constructors.
+-- Just enough for umf modeling.
 
-require "utils"
+require("utils")
 module("umf", package.seeall)
 
 Object={}      -- Everything is derived from class Object.
@@ -38,18 +38,21 @@ function class(name, base)
    local klass = {}
    local klass_iops={}
    local klass_cops={}
+   local klass_iops_mt={ __index=base:iops() }
+   local newobj_mt={ class=klass, __index=klass_iops, __tostring=Object_iops.tostring }
 
    -- Create Constructor
    function klass_cops:new(t)
       local newobj = t or {}
       if klass_iops.init then klass_iops.init(newobj) end
-      setmetatable( newobj, { class=klass, __index=klass_iops })
-      setmetatable( klass_iops, { __index=base:iops() })
+      setmetatable( newobj, newobj_mt )
+      setmetatable( klass_iops, klass_iops_mt )
       return newobj
    end
 
    setmetatable(klass, { classname=name, iops=klass_iops, super=base,
-			 __index=klass_cops, __newindex=Object_cops.addMethod, __call=klass_cops.new  })
+			 __index=klass_cops, __newindex=Object_cops.addMethod,
+			 __call=klass_cops.new, __tostring=Object_cops.tostring  })
    setmetatable(klass_cops, { __index=base:cops() })
    return klass
 end
