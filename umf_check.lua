@@ -1,7 +1,9 @@
 
-local umf=require "umf"
-local utils=require "utils"
+local color=true
 
+local umf=require("umf")
+local utils=require("utils")
+local ac=require("ansicolors")
 local table=table
 
 local type=type
@@ -64,13 +66,19 @@ ObjectSpec=class("ObjectSpec", TableSpec)
 -- @param level: 'err', 'warn', 'inf'
 -- @param msg string message
 local function add_msg(vres, level, msg)
+   local function colorize(level, msg)
+      if not color then return msg end
+      if level=='inf' then return ac.blue(msg)
+      elseif level=='warn' then return ac.yellow(msg)
+      elseif level=='err' then return ac.red(ac.bright(msg)) end
+   end
    if not vres then return end
    if not (level=='err' or level=='warn' or level=='inf') then
       error("add_msg: invalid level: " .. tostring(level))
    end
    if not vres then return end
    local msgs = vres.msgs
-   msgs[#msgs+1]=level .. ": " .. table.concat(vres.context, '.') .. " " .. msg
+   msgs[#msgs+1]=colorize(level, level .. ": " .. table.concat(vres.context, '.') .. " " .. msg)
    vres[level] = vres[level] + 1
    return vres
 end
@@ -277,7 +285,6 @@ function ObjectSpec.check(self, obj, vres)
    vres_pop_context(vres)
    return res
 end
-
 
 --- Print the validation results.
 function print_vres(vres)
