@@ -21,7 +21,9 @@ a1=Animal{}
 m1=Mammal{ name="bello" }
 h1=Human{ name="Jeff"}
 
+print("m1:speak()")
 m1:speak()
+print("h1:speak()")
 h1:speak()
 
 
@@ -40,6 +42,7 @@ print("instance_of(h1, Human): ", umf.instance_of(Human, h1))
 print("instance_of(a1, Object):", umf.instance_of(umf.Object, a1))
 print("instance_of(m1, Object):", umf.instance_of(umf.Object, m1))
 print("instance_of(h1, Object):", umf.instance_of(umf.Object, h1))
+
 
 -- print("instance_of(Animal, Object):", umf.instance_of(Animal, uoo.Object))
 -- print("instance_of(Mammal, Object):", umf.instance_of(Mammal, uoo.Object))

@@ -1,6 +1,14 @@
 --- micro-OO: classes, objects, simple inheritance, constructors.
 -- Just enough for umf modeling.
 
+--
+-- klass = { name, super, iops, cops }
+-- klass.iops.__index = klass.iops
+-- if klass.super then 
+--     setmetatable(klass.iops, super.iops)
+--     setmetatable(klass.cops
+--
+
 require("utils")
 module("umf", package.seeall)
 
@@ -20,7 +28,10 @@ function Object_cops:tostring() return 'Class '.. self:classname() end
 function Object_cops:type() return 'class' end
 function Object_cops:cops() return getmetatable(self).__index end
 function Object_cops:iops() return getmetatable(self).iops end
-function Object_cops:addMethod(k,m) self:iops()[k]=m end
+function Object_cops:addMethod(k,m) 
+   print("adding operation "..k)
+   self:iops()[k]=m 
+end
 
 function Object_cops:new(t)
    local newobj = t or {}
@@ -37,16 +48,19 @@ function class(name, base)
    base = base or Object
    local klass = {}
    local klass_iops={}
-   local klass_cops={}
-   local klass_iops_mt={ __index=base:iops() }
-   local newobj_mt={ class=klass, __index=klass_iops, __tostring=Object_iops.tostring }
+   local base_iops=base:iops() or {}
+   local newobj_mt={ class=klass, __index=function(t,k)
+					     return klass_iops[k] or base_iops[k]
+					  end,
+		     __tostring=Object_iops.tostring }
 
    -- Create Constructor
    function klass_cops:new(t)
       local newobj = t or {}
       if klass_iops.init then klass_iops.init(newobj) end
       setmetatable( newobj, newobj_mt )
-      setmetatable( klass_iops, klass_iops_mt )
+      --
+ setmetatable( klass_iops, klass_iops_mt )
       return newobj
    end
 
