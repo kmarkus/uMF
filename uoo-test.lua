@@ -17,6 +17,10 @@ function Human:speak()
    print("haloelle says ".. self.name)
 end
 
+function Mammal:init()
+   self.mammal='seal'
+end
+
 a1=Animal{}
 m1=Mammal{ name="bello" }
 h1=Human{ name="Jeff"}

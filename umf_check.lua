@@ -18,7 +18,7 @@ module("umf_check")
 local class = umf.class
 
 -- helpers
--- function log(...) print(...) end
+---function log(...) print(...) end
 function log(...) return end
 
 --- Split a table in array and dictionary part.
@@ -154,9 +154,9 @@ function EnumSpec.check(self, obj, vres)
    add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (valid: " .. table.concat(self, ", ")..")")
 end
 
-function TableSpec.init(t)
-   t.dict = t.dict or {}
-   t.array = t.array or {}
+function TableSpec:init()
+   self.dict = self.dict or {}
+   self.array = self.array or {}
 end
 
 --- Validate a table spec.
@@ -184,7 +184,7 @@ function TableSpec.check(self, obj, vres)
    end
 
    local function check_dict_entry(entry, key)
-      if key=='class' or key=='__other' then return end
+      if key=='__other' then return end
       vres_push_context(vres, key)
 
       local sealed = self.sealed == 'both' or self.sealed=='dict'
@@ -260,7 +260,7 @@ function ClassSpec.check(self, c, vres)
       add_msg(vres, "err", "'"..tostring(c) .."' not of (sub-)class '"..tostring(self.type).."'")
       return false
    end
-   local res=TableSpec:iops().check(self, c, vres)
+   local res=TableSpec.check(self, c, vres)
    vres_pop_context(vres)
    return res
 end
@@ -273,7 +273,7 @@ function ObjectSpec.check(self, obj, vres)
       add_msg(vres, "err", "'".. tostring(obj) .."' not an instance of '"..tostring(self.type).."'")
       return false
    end
-   local res=TableSpec:iops().check(self, obj, vres)
+   local res=TableSpec.check(self, obj, vres)
    vres_pop_context(vres)
    return res
 end
