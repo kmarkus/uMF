@@ -1,81 +1,55 @@
 --- micro-OO: classes, objects, simple inheritance, constructors.
 -- Just enough for umf modeling.
 
---
--- klass = { name, super, iops, cops }
--- klass.iops.__index = klass.iops
--- if klass.super then 
---     setmetatable(klass.iops, super.iops)
---     setmetatable(klass.cops
---
-
 require("utils")
 module("umf", package.seeall)
 
-Object={}      -- Everything is derived from class Object.
-Object_cops={} -- Methods of class
-Object_iops={} -- Methods of instances of class
+local function __class(name, super)
+   local klass = { name=name, superclass=super, static = {}, iops={}, __class_identifier=true }
 
--- Object methods
-function Object_iops:class() return getmetatable(self).class end
-function Object_iops:type() return 'instance' end
-function Object_iops:tostring() return "instance of class "..self:class():classname() end
+   -- setup iops
+   local iops = klass.iops
+   iops.__index = iops
 
--- Class methods
-function Object_cops:super() return getmetatable(self).super end
-function Object_cops:classname() return getmetatable(self).classname end
-function Object_cops:tostring() return 'Class '.. self:classname() end
-function Object_cops:type() return 'class' end
-function Object_cops:cops() return getmetatable(self).__index end
-function Object_cops:iops() return getmetatable(self).iops end
-function Object_cops:addMethod(k,m) 
-   print("adding operation "..k)
-   self:iops()[k]=m 
-end
-
-function Object_cops:new(t)
-   local newobj = t or {}
-   setmetatable(newobj, { class=Object, __index=Object_iops, __tostring=Object_iops.tostring })
-   return newobj
-end
-
-setmetatable(Object, { classname='Object', iops=Object_iops, super=false,
-		       __index=Object_cops, __newindex=Object_cops.addMethod,
-		       __tostring=Object_cops.tostring, __call=Object_cops.new } )
-
---- Create a new class.
-function class(name, base)
-   base = base or Object
-   local klass = {}
-   local klass_iops={}
-   local base_iops=base:iops() or {}
-   local newobj_mt={ class=klass, __index=function(t,k)
-					     return klass_iops[k] or base_iops[k]
-					  end,
-		     __tostring=Object_iops.tostring }
-
-   -- Create Constructor
-   function klass_cops:new(t)
-      local newobj = t or {}
-      if klass_iops.init then klass_iops.init(newobj) end
-      setmetatable( newobj, newobj_mt )
-      --
- setmetatable( klass_iops, klass_iops_mt )
-      return newobj
+   if super then
+      local superStatic = super.static
+      setmetatable(iops, super.iops)
+      setmetatable(klass.static, { __index = function(_,k) return iops[k] or superStatic[k] end })
+   else
+      setmetatable(klass.static, { __index = function(_,k) return iops[k] end })
    end
 
-   setmetatable(klass, { classname=name, iops=klass_iops, super=base,
-			 __index=klass_cops, __newindex=Object_cops.addMethod,
-			 __call=klass_cops.new, __tostring=Object_cops.tostring  })
-   setmetatable(klass_cops, { __index=base:cops() })
-   return klass
+  setmetatable(klass, {
+    __tostring = function() return "class " .. klass.name end,
+    __index    = klass.static,
+    __newindex = klass.iops,
+    __call     = function(self, ...) return self:new(...) end
+  })
+
+  klass.class=function(_) return klass end -- enable access to class
+  return klass
 end
+
+Object = __class("Object")
+
+function class(name, super) return __class(name, super or Object) end
+
+function Object.static:new(t)
+   local obj = setmetatable(t or {}, self.iops)
+   obj:init()
+   return obj
+end
+
+function Object.static:super() return self.superclass end
+function Object.static:classname() return self.name end
+function Object.static:type() return 'class' end
+function Object:init() return end
 
 function uoo_type(x)
    if not x then return false end
    local mt = getmetatable(x)
-   if mt and mt.class then return 'instance'
-   elseif mt and mt.classname then return 'class' end
+   if mt and mt.__index==x.static then return 'class'
+   elseif mt and mt.class then return 'instance' end
    return false
 end
 
@@ -95,3 +69,4 @@ function instance_of(klass, obj)
    assert(uoo_type(obj)=='instance', "instance_of: second argument not an instance")
    return subclass_of(obj:class(), klass)
 end
+
