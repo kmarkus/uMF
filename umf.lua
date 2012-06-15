@@ -5,14 +5,12 @@ local color=true
 
 local ac=require("ansicolors")
 local utils=require("utils")
--- require "strict"
 
 module("umf", package.seeall)
 
+--- microObjects:
 local function __class(name, super)
    local klass = { name=name, superclass=super, static = {}, iops={}, __class_identifier=true }
-
-   -- setup iops
    local iops = klass.iops
    iops.__index = iops
 
@@ -75,10 +73,7 @@ function instance_of(klass, obj)
    return subclass_of(obj:class(), klass)
 end
 
-
----
---- UMF checking code starts here.
----
+--- uMF spec validation.
 
 -- helpers
 ---function log(...) print(...) end
@@ -307,7 +302,7 @@ function TableSpec.check(self, obj, vres)
    local t = type(obj)
    if t ~= "table" then
       add_msg(vres, "err", "not a table but a " ..t)
-      ret=false
+      return false -- fatal.
    end
 
    local arr,dct = table_split(obj)
@@ -361,6 +356,7 @@ function check(obj, spec)
    elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"..msg); return false end
 
    local vres = { msgs={}, err=0, warn=0, inf=0 }
+   vres_push_context(vres, "root")
 
    spec:check(obj, vres)
    print_vres(vres)
