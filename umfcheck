@@ -1,0 +1,44 @@
+#!/usr/bin/env lua
+-- -*- lua -*-
+
+local umf=require("umf")
+local utils=require("utils")
+require "strict"
+
+NumberSpec=umf.NumberSpec
+StringSpec=umf.StringSpec
+BoolSpec=umf.BoolSpec
+EnumSpec=umf.EnumSpec
+TableSpec=umf.TableSpec
+ClassSpec=umf.ClassSpec
+ObjectSpec=umf.ObjectSpec
+
+if #arg~=2 then
+   print( [=[
+umfcheck v0.1
+validate uMF models.
+  Usage:
+     umfcheck <specfile> <modelfile>
+	     ]=] )
+   os.exit(1)
+end
+
+function check_file(f, name)
+   if not utils.file_exists(f) then 
+      print("error: no "..name.." "..specfile)
+      os.exit(1)
+   end
+   return f
+end
+
+local specfile = check_file(arg[2])
+local modelfile = check_file(arg[1])
+
+local spec = dofile(specfile)
+local model = dofile(modelfile)
+
+if not spec then print("err: no spec could be loaded from file "..specfile) end
+if not model then print("err: no model could be loaded from file "..modelfile) end
+
+if umf.check(model, spec) then os.exit(0)
+else os.exit(2) end
