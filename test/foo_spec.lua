@@ -4,5 +4,11 @@
 return TableSpec{
    name='foo',
    sealed='array',
-   dict={__other={StringSpec{}, NumberSpec{}}},
+   dict={
+      __other={
+	 StringSpec{}, 
+	 NumberSpec{},
+	 foo=FunctionSpec{}
+      }
+   },
 }

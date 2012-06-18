@@ -2,11 +2,15 @@
 -- Just enough for umf modeling.
 
 local color=true
+local logmsgs = true
 
 local ac=require("ansicolors")
 local utils=require("utils")
 
 module("umf", package.seeall)
+
+--function log(...) print(...) end
+function log(...) return end
 
 --- microObjects:
 local function __class(name, super)
@@ -75,10 +79,6 @@ end
 
 --- uMF spec validation.
 
--- helpers
-function log(...) print(...) end
--- function log(...) return end
-
 --- Split a table in array and dictionary part.
 function table_split(t)
    local arr,dict = {},{}
@@ -134,7 +134,7 @@ local function add_msg(vres, level, msg)
    end
    if not vres then return end
    local msgs = vres.msgs
-   msgs[#msgs+1]=colorize(level, level .. ": " .. table.concat(vres.context, '.') .. " " .. msg)
+   msgs[#msgs+1]=colorize(level, level .. " @ " .. table.concat(vres.context, '.') .. ": " .. msg)
    vres[level] = vres[level] + 1
    return vres
 end
@@ -204,8 +204,8 @@ function BoolSpec.check(self, obj, vres)
 end
 
 --- Validate a function spec.
-function FunctionSpec(self, obj, vres)
-   log("checking function spec", obj)
+function FunctionSpec.check(self, obj, vres)
+   log("checking function spec against object "..tostring(obj))
    local t = type(obj)
    if t == "function" then return true end
    add_msg(vres, "err", "not a function but a " ..t)
@@ -241,6 +241,7 @@ function TableSpec.check(self, obj, vres)
    end
 
    local function is_a_valid_spec(entry, spec_tab)
+      spec_tab = spec_tab or {}
       for _,spec in ipairs(spec_tab) do
 	 if spec:check(entry) then return true end
       end
@@ -248,30 +249,29 @@ function TableSpec.check(self, obj, vres)
    end
 
    local function check_dict_entry(entry, key)
-      if key=='__other' then return end
+      -- if key=='__other' then return end ?
       vres_push_context(vres, key)
-
       local sealed = self.sealed == 'both' or self.sealed=='dict'
 
-      if sealed and not self.dict[key] then
-	 add_msg(vres, "err", "unknown dict field '"..tostring(key).."' of type "..tostring(entry).." found in sealed table")
-	 ret=false
-      elseif not sealed and not self.dict[key] then
-	 -- do we have a __other table to comply with?
-	 -- tbd: we check wether it is a spec, but not if it is valid?!
-	 if self.dict.__other then
-	    if not is_a_valid_spec(entry, self.dict.__other) then
-	       add_msg(vres, "err", "non legal value '"..tostring(entry).." of key '"..key.."' in unsealed dict")
-	       ret=false
-	    end
+      -- known key, check it.
+      if self.dict[key] then
+	 if not self.dict[key]:check(entry, vres) then
+	    ret=false
+	    log("key found but spec checking failed")
 	 else
-	    -- ignore it
+	    log("key found and spec checking OK")
+	 end
+      elseif not self.dict[key] and is_a_valid_spec(entry, self.dict.__other) then
+	 log("found matching spec in __other table")
+      elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
+	 if sealed then
+	    add_msg(vres, "err", "key '"..key.."' has illegal value '"..tostring(entry).."' in sealed dict")
+	    log("checking __other for key "..key.. " failed")
+	    ret=false
+	 else
 	    add_msg(vres, "inf", "ignoring unkown field "..key)
 	 end
-      else
-	 -- known key, check it.
-	 if not self.dict[key]:check(entry, vres) then ret=false end
-      end
+      else error("should not get here") end
       vres_pop_context(vres)
       return
    end
@@ -310,7 +310,7 @@ function TableSpec.check(self, obj, vres)
    utils.foreach(function (e) check_array_entry(e) end, arr)
    utils.foreach(function (e,k) check_dict_entry(e, k) end, dct)
    check_dict_optionals(dct)
-   log("checking table spec "..(self.name or "unnamed")..": "..tostring(ret))
+   log("checked table spec "..(self.name or "unnamed")..", result: "..tostring(ret))
    return ret
 end
 
