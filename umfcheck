@@ -3,36 +3,42 @@
 
 local umf=require("umf")
 local utils=require("utils")
-require "strict"
 
 NumberSpec=umf.NumberSpec
 StringSpec=umf.StringSpec
 BoolSpec=umf.BoolSpec
+FunctionSpec=umf.FunctionSpec
 EnumSpec=umf.EnumSpec
 TableSpec=umf.TableSpec
 ClassSpec=umf.ClassSpec
 ObjectSpec=umf.ObjectSpec
 
-if #arg~=2 then
+function help()
    print( [=[
 umfcheck v0.1
 validate uMF models.
   Usage:
-     umfcheck <specfile> <modelfile>
+     umfcheck OPTIONS <modelfile> <specfile>
+  Options:
+	-q    quiet, no output
+	-h    print help
 	     ]=] )
-   os.exit(1)
 end
 
 function check_file(f, name)
-   if not utils.file_exists(f) then 
+   if not utils.file_exists(f) then
       print("error: no "..name.." "..specfile)
       os.exit(1)
    end
    return f
 end
 
-local specfile = check_file(arg[2])
-local modelfile = check_file(arg[1])
+local argtab=utils.proc_args(arg)
+
+if #arg<2 or argtab['-h'] then help(); os.exit(1); end
+
+local specfile = check_file(arg[#arg])
+local modelfile = check_file(arg[#arg-1])
 
 local spec = dofile(specfile)
 local model = dofile(modelfile)
@@ -40,5 +46,5 @@ local model = dofile(modelfile)
 if not spec then print("err: no spec could be loaded from file "..specfile) end
 if not model then print("err: no model could be loaded from file "..modelfile) end
 
-if umf.check(model, spec) then os.exit(0)
+if umf.check(model, spec, (not argtab['-q']))~=0 then os.exit(0)
 else os.exit(2) end

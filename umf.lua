@@ -76,8 +76,8 @@ end
 --- uMF spec validation.
 
 -- helpers
----function log(...) print(...) end
-function log(...) return end
+function log(...) print(...) end
+-- function log(...) return end
 
 --- Split a table in array and dictionary part.
 function table_split(t)
@@ -124,7 +124,7 @@ ObjectSpec=class("ObjectSpec", TableSpec)
 local function add_msg(vres, level, msg)
    local function colorize(level, msg)
       if not color then return msg end
-      if level=='inf' then return ac.blue(msg)
+      if level=='inf' then return ac.blue(ac.bright(msg))
       elseif level=='warn' then return ac.yellow(msg)
       elseif level=='err' then return ac.red(ac.bright(msg)) end
    end
@@ -296,7 +296,7 @@ function TableSpec.check(self, obj, vres)
       end
    end
 
-   log("checking table spec")
+   log("checking table spec "..(self.name or "unnamed"))
 
    -- check we have a table
    local t = type(obj)
@@ -310,6 +310,7 @@ function TableSpec.check(self, obj, vres)
    utils.foreach(function (e) check_array_entry(e) end, arr)
    utils.foreach(function (e,k) check_dict_entry(e, k) end, dct)
    check_dict_optionals(dct)
+   log("checking table spec "..(self.name or "unnamed")..": "..tostring(ret))
    return ret
 end
 
@@ -349,16 +350,20 @@ function print_vres(vres)
 end
 
 --- Check a specification against an object.
-function check(obj, spec)
+-- @param object object to check
+-- @param spec umf spec to check against.
+-- @return number of errors
+-- @return validation result table
+function check(obj, spec, verb)
    -- spec must be an instance of Spec:
+   if verb then print("checking spec "..(spec.name or "unnamed")) end
    local ok, ret = pcall(instance_of, Spec, spec)
    if not ok then print("err: failed to validate given spec:\n"..ret); return false
    elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"..msg); return false end
 
    local vres = { msgs={}, err=0, warn=0, inf=0 }
    vres_push_context(vres, "root")
-
    spec:check(obj, vres)
-   print_vres(vres)
-   return vres
+   if verb then print_vres(vres) end
+   return vres.err, vres
 end
