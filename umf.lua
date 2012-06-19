@@ -121,7 +121,7 @@ ObjectSpec=class("ObjectSpec", TableSpec)
 -- @param validation structure
 -- @param level: 'err', 'warn', 'inf'
 -- @param msg string message
-local function add_msg(vres, level, msg)
+function add_msg(vres, level, msg)
    local function colorize(level, msg)
       if not color then return msg end
       if level=='inf' then return ac.blue(ac.bright(msg))
@@ -305,11 +305,19 @@ function TableSpec.check(self, obj, vres)
       return false -- fatal.
    end
 
-   local arr,dct = table_split(obj)
+   vres_push_context(vres, self.name)
+   if self.precheck then ret=self.precheck(self, obj, vres) end -- precheck hook
 
-   utils.foreach(function (e) check_array_entry(e) end, arr)
-   utils.foreach(function (e,k) check_dict_entry(e, k) end, dct)
-   check_dict_optionals(dct)
+   if ret then
+      local arr,dct = table_split(obj)
+      utils.foreach(function (e) check_array_entry(e) end, arr)
+      utils.foreach(function (e,k) check_dict_entry(e, k) end, dct)
+      check_dict_optionals(dct)
+   end
+
+   if self.postcheck and ret then ret=self.postcheck(self, obj, vres) end
+
+   vres_pop_context(vres)
    log("checked table spec "..(self.name or "unnamed")..", result: "..tostring(ret))
    return ret
 end
@@ -319,27 +327,33 @@ function ClassSpec.check(self, c, vres)
    log("validating class spec of type " .. self.name)
    vres_push_context(vres, self.name)
 
-   -- classes are not the same or obj a subclass
-   -- if not (self:type() == obj:type().name or subclassOf(self.type, obj)) then
+   -- check that they are classes
    if not uoo_type(c)=='class' or not subclass_of(c, self.type) then
       add_msg(vres, "err", "'"..tostring(c) .."' not of (sub-)class '"..tostring(self.type).."'")
       return false
    end
-   local res=TableSpec.check(self, c, vres)
    vres_pop_context(vres)
+   local res=TableSpec.check(self, c, vres)
    return res
 end
 
 --- Check an object spec.
 function ObjectSpec.check(self, obj, vres)
+   local res=true
    log("validating object spec of type " .. self.name)
    vres_push_context(vres, self.name)
-   if not instance_of(self.type, obj) then
+   if uoo_type(self.type) ~= 'class' then
+      add_msg(vres, "err", "type field of ObjectSpec "..tostring(self.name).. " is not a umf class")
+      res=false
+   elseif uoo_type(obj) ~= 'instance' then
+      add_msg(vres, "err", "given type is not a umf class but a '"..tostring(type(obj)).."'")
+      res = false
+   elseif not instance_of(self.type, obj) then
       add_msg(vres, "err", "'".. tostring(obj) .."' not an instance of '"..tostring(self.type).."'")
-      return false
+      res=false
    end
-   local res=TableSpec.check(self, obj, vres)
    vres_pop_context(vres)
+   if res then res=TableSpec.check(self, obj, vres) end
    return res
 end
 
