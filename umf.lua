@@ -38,7 +38,6 @@ local function __class(name, super)
 end
 
 Object = __class("Object")
-
 function class(name, super) return __class(name, super or Object) end
 
 function Object.static:new(t)
@@ -265,7 +264,7 @@ function TableSpec.check(self, obj, vres)
 	 log("found matching spec in __other table")
       elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
 	 if sealed then
-	    add_msg(vres, "err", "key '"..key.."' has illegal value '"..tostring(entry).."' in sealed dict")
+	    add_msg(vres, "err", "key '"..key.."' has illegal value '"..tostring(entry).."'")
 	    log("checking __other for key "..key.. " failed")
 	    ret=false
 	 else
@@ -376,7 +375,6 @@ function check(obj, spec, verb)
    elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"..msg); return false end
 
    local vres = { msgs={}, err=0, warn=0, inf=0 }
-   vres_push_context(vres, "root")
    spec:check(obj, vres)
    if verb then print_vres(vres) end
    return vres.err, vres
