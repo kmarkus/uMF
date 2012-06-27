@@ -152,7 +152,7 @@ end
 function vres_pop_context(vres)
    if not vres then return end
    vres.context=vres.context or {}
-   if #vres.context <= 0 then error("vres pop <= 0") end
+   if #vres.context < 0 then error("vres pop < 0") end
    vres.context[#vres.context] = nil
 end
 
@@ -264,7 +264,8 @@ function TableSpec.check(self, obj, vres)
 	 log("found matching spec in __other table")
       elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
 	 if sealed then
-	    add_msg(vres, "err", "key '"..key.."' has illegal value '"..tostring(entry).."'")
+	    add_msg(vres, "err", "undeclared key '".. key..
+		    "' (not legitimized by __other) in sealed dict (value: '"..tostring(entry).."')")
 	    log("checking __other for key "..key.. " failed")
 	    ret=false
 	 else

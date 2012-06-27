@@ -19,7 +19,7 @@ robot_spec = umf.ObjectSpec{
       robot_type=EnumSpec{"industrial", "mobile", "aerial", "underwater"},
    },
 
-   optional={'robo_type'},
+   optional={'robot_type'},
 }
 robot_spec.array[#robot_spec.array+1]=BoolSpec{}
 
