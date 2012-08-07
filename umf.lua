@@ -375,7 +375,7 @@ function check(obj, spec, verb)
    if not ok then print("err: failed to validate given spec:\n"..ret); return false
    elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"..msg); return false end
 
-   local vres = { msgs={}, err=0, warn=0, inf=0 }
+   local vres = { msgs={}, err=0, warn=0, inf=0, context={} }
    spec:check(obj, vres)
    if verb then print_vres(vres) end
    return vres.err, vres
