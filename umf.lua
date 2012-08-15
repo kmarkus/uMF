@@ -131,11 +131,15 @@ function add_msg(vres, level, msg)
    if not (level=='err' or level=='warn' or level=='inf') then
       error("add_msg: invalid level: " .. tostring(level))
    end
-   if not vres then return end
    local msgs = vres.msgs
    msgs[#msgs+1]=colorize(level, level .. " @ " .. table.concat(vres.context, '.') .. ": " .. msg)
    vres[level] = vres[level] + 1
    return vres
+end
+
+function vres_add_newline(vres)
+   local msgs = vres.msgs
+   msgs[#msgs+1] = ''
 end
 
 --- Push error message context.
@@ -239,10 +243,10 @@ function TableSpec.check(self, obj, vres)
       end
    end
 
-   local function is_a_valid_spec(entry, spec_tab)
+   local function is_a_valid_spec(entry, spec_tab, vres)
       spec_tab = spec_tab or {}
       for _,spec in ipairs(spec_tab) do
-	 if spec:check(entry) then return true end
+	 if spec:check(entry, vres) then return true end
       end
       return false
    end
@@ -264,9 +268,11 @@ function TableSpec.check(self, obj, vres)
 	 log("found matching spec in __other table")
       elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
 	 if sealed then
-	    add_msg(vres, "err", "undeclared key '".. key..
-		    "' not legitimized by __other in sealed dict (value: '"..tostring(entry).."')")
-
+	    add_msg(vres, "err", "checking __other failed for undeclared key '".. key..
+		    "' in sealed dict. Error(s) follow:")
+	    -- add errmsg of __other check
+	    is_a_valid_spec(entry, self.dict.__other, vres)
+	    vres_add_newline(vres)
 	    log("checking __other for key "..key.. " failed")
 	    ret=false
 	 else
