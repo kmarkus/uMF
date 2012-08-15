@@ -265,11 +265,12 @@ function TableSpec.check(self, obj, vres)
       elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
 	 if sealed then
 	    add_msg(vres, "err", "undeclared key '".. key..
-		    "' (not legitimized by __other) in sealed dict (value: '"..tostring(entry).."')")
+		    "' not legitimized by __other in sealed dict (value: '"..tostring(entry).."')")
+
 	    log("checking __other for key "..key.. " failed")
 	    ret=false
 	 else
-	    add_msg(vres, "inf", "ignoring unkown field "..key)
+	    add_msg(vres, "inf", "ignoring unkown field "..key.." in unsealed dict")
 	 end
       else error("should not get here") end
       vres_pop_context(vres)
