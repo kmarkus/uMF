@@ -202,7 +202,7 @@ function BoolSpec.check(self, obj, vres)
    log("checking boolean spec")
    local t = type(obj)
    if t == "boolean" then return true end
-   add_msg(vres, "err", "not a string but a " ..t)
+   add_msg(vres, "err", "not a boolean but a " ..t)
    return false
 end
 
