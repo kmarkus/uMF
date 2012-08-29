@@ -379,7 +379,7 @@ function check(obj, spec, verb)
    -- spec must be an instance of Spec:
    if verb then print("checking spec "..(spec.name or "unnamed")) end
    local ok, ret = pcall(instance_of, Spec, spec)
-   if not ok then print("err: failed to validate given spec:\n"..ret); return false
+   if not ok then print("err: second argument not an Object (should be Spec instance)"); return false
    elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"..msg); return false end
 
    local vres = { msgs={}, err=0, warn=0, inf=0, context={} }
