@@ -264,6 +264,8 @@ function TableSpec.check(self, obj, vres)
 	 else
 	    log("key found and spec checking OK")
 	 end
+      elseif not self.dict.__other and sealed then -- unkown key, no __other and sealed -> err!
+	 add_msg(vres, "err", "illegal field "..key.." in sealed dict (value: "..tostring(entry)..")")
       elseif not self.dict[key] and is_a_valid_spec(entry, self.dict.__other) then
 	 log("found matching spec in __other table")
       elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
