@@ -45,8 +45,8 @@ local utils=require("utils")
 
 module("umf", package.seeall)
 
---function log(...) print(...) end
-function log(...) return end
+function log(...) print(...) end
+-- function log(...) return end
 
 --- microObjects:
 local function __class(name, super)
@@ -174,6 +174,7 @@ function add_msg(vres, level, msg)
 end
 
 function vres_add_newline(vres)
+   if not vres then return end -- not sure this is necessary/correct/
    local msgs = vres.msgs
    msgs[#msgs+1] = ''
 end
@@ -266,25 +267,29 @@ end
 function TableSpec.check(self, obj, vres)
    local ret=true
 
-   --- Check if val is a legal array entry type.
-   local function check_array_entry(entry)
-      local sealed = self.sealed == 'both' or self.sealed=='array'
-      local arr_spec = self.array or {}
-      for _,sp in ipairs(arr_spec) do if sp:check(entry) then return end end
-      if sealed then
-	 add_msg(vres, "err", "illegal/invalid entry '"..tostring(entry) .."' in array part")
-	 ret=false
-      else
-	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
-      end
-   end
-
    local function is_a_valid_spec(entry, spec_tab, vres)
       spec_tab = spec_tab or {}
       for _,spec in ipairs(spec_tab) do
 	 if spec:check(entry, vres) then return true end
       end
       return false
+   end
+
+
+   --- Check if val is a legal array entry type.
+   local function check_array_entry(entry)
+      local sealed = self.sealed == 'both' or self.sealed=='array'
+      local arr_spec = self.array or {}
+      for _,sp in ipairs(arr_spec) do if sp:check(entry) then return end end
+      if sealed then
+	 add_msg(vres, "err", "illegal/invalid entry array part. Error(s) follow:")
+	 is_a_valid_spec(entry, arr_spec, vres)
+	 vres_add_newline(vres)
+	 log("checking array for key failed")
+	 ret=false
+      else
+	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
+      end
    end
 
    local function check_dict_entry(entry, key)
@@ -391,7 +396,7 @@ function ObjectSpec.check(self, obj, vres)
       add_msg(vres, "err", "type field of ObjectSpec "..tostring(self.name).. " is not a umf class")
       res=false
    elseif uoo_type(obj) ~= 'instance' then
-      add_msg(vres, "err", "given type is not a umf class but a '"..tostring(type(obj)).."'")
+      add_msg(vres, "err", "given object is not an umf class instance but a '"..tostring(type(obj)).."'")
       res = false
    elseif not instance_of(self.type, obj) then
       add_msg(vres, "err", "'".. tostring(obj) .."' not an instance of '"..tostring(self.type).."'")
