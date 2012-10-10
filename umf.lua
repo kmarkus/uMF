@@ -46,8 +46,8 @@ local ts = tostring
 
 module("umf", package.seeall)
 
---function log(...) print(...) end
-function log(...) return end
+function log(...) print(...) end
+--function log(...) return end
 
 --- microObjects:
 local function __class(name, super)
@@ -304,6 +304,7 @@ function TableSpec.check(self, obj, vres)
    --- Check if key=entry are valid for the TableSpec 'self'.
    local function check_dict_entry(entry, key)
       -- if key=='__other' then return end ?
+      log("check_dict_entry: "..ts(key).."="..ts(entry))
       vres_push_context(vres, key)
       local sealed = self.sealed == 'both' or self.sealed=='dict'
 
@@ -315,11 +316,16 @@ function TableSpec.check(self, obj, vres)
 	 else
 	    log("key " .. ts(key) .. " found and spec checking OK")
 	 end
-      elseif not self.dict.__other and sealed then -- unkown key, no __other and sealed -> err!
+      elseif not self.dict.__other and sealed then
+	 -- unkown key, no __other and sealed -> err!
 	 add_msg(vres, "err", "illegal field "..key.." in sealed dict (value: "..tostring(entry)..")")
+	 ret=false
       elseif not self.dict[key] and is_a_valid_spec(entry, self.dict.__other) then
+	 -- unknown key, but __other legitimizes entry
 	 log("found matching spec in __other table")
       elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
+	 -- unkown key AND __other does not legitimze: if unsealed ->
+	 -- fine. If sealed, report the errors of all checks.
 	 if sealed then
 	    add_msg(vres, "err", "checking __other failed for undeclared key '".. key..
 		    "' in sealed dict. Error(s) follow:")
