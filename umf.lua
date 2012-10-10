@@ -46,8 +46,8 @@ local ts = tostring
 
 module("umf", package.seeall)
 
-function log(...) print(...) end
--- function log(...) return end
+--function log(...) print(...) end
+function log(...) return end
 
 --- microObjects:
 local function __class(name, super)
@@ -290,9 +290,8 @@ function TableSpec.check(self, obj, vres)
       for _,sp in ipairs(arr_spec) do
 	 if sp:check(entry) then return end
       end
-      print("array checking could not legitimize ", ts(entry))
       if sealed then
-	 add_msg(vres, "err", "illegal/invalid entry array part. Error(s) follow:")
+	 add_msg(vres, "err", "illegal/invalid entry '".. ts(entry) .. "' in array part. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
 	 vres_add_newline(vres)
 	 log("checking array failed")
