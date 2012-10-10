@@ -46,8 +46,8 @@ local ts = tostring
 
 module("umf", package.seeall)
 
-function log(...) print(...) end
---function log(...) return end
+--function log(...) print(...) end
+function log(...) return end
 
 --- microObjects:
 local function __class(name, super)
@@ -158,18 +158,19 @@ ObjectSpec=class("ObjectSpec", TableSpec)
 -- @param level: 'err', 'warn', 'inf'
 -- @param msg string message
 function add_msg(vres, level, msg)
-   local function colorize(level, msg)
-      if not color then return msg end
-      if level=='inf' then return ac.blue(ac.bright(msg))
-      elseif level=='warn' then return ac.yellow(msg)
-      elseif level=='err' then return ac.red(ac.bright(msg)) end
+   local function colorize(level, ctx, msg)
+      if not color then return level .. " @ "..ctx..msg end
+      if level=='inf' then msg = ac.blue(ac.bright(msg))
+      elseif level=='warn' then msg = ac.yellow(msg)
+      elseif level=='err' then msg = ac.red(ac.bright(msg)) end
+      return ac.cyan(ac.bright(ctx))..msg
    end
    if not vres then return end
    if not (level=='err' or level=='warn' or level=='inf') then
       error("add_msg: invalid level: " .. tostring(level))
    end
    local msgs = vres.msgs
-   msgs[#msgs+1]=colorize(level, level .. " @ " .. table.concat(vres.context, '.') .. ": " .. msg)
+   msgs[#msgs+1]=colorize(level, table.concat(vres.context, '.').. ": ", msg)
    vres[level] = vres[level] + 1
    return vres
 end
@@ -276,6 +277,16 @@ function TableSpec.check(self, obj, vres)
 
    local function is_a_valid_spec(entry, spec_tab, vres)
       spec_tab = spec_tab or {}
+      -- if entry is an Object and we have a matching ObjectSpec then
+      -- prefer that!
+      if uoo_type(entry) == 'instance' then
+	 for _,spec in ipairs(spec_tab) do
+	    if instance_of(ObjectSpec, spec) and instance_of(spec.type, entry) then
+	       return spec:check(entry, vres)
+	    end
+	 end
+      end
+      -- brute force
       for _,spec in ipairs(spec_tab) do
 	 if spec:check(entry, vres) then return true end
       end
@@ -287,9 +298,9 @@ function TableSpec.check(self, obj, vres)
    local function check_array_entry(entry)
       local sealed = self.sealed == 'both' or self.sealed=='array'
       local arr_spec = self.array or {}
-      for _,sp in ipairs(arr_spec) do
-	 if sp:check(entry) then return end
-      end
+
+      if is_a_valid_spec(entry, arr_spec) then return end
+
       if sealed then
 	 add_msg(vres, "err", "illegal/invalid entry '".. ts(entry) .. "' in array part. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
