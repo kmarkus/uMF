@@ -162,8 +162,8 @@ function add_msg(vres, level, msg)
       if not color then return level .. " @ "..ctx..msg end
       if level=='inf' then msg = ac.blue(ac.bright(msg))
       elseif level=='warn' then msg = ac.yellow(msg)
-      elseif level=='err' then msg = ac.red(ac.bright(msg)) end
-      return ac.cyan(ac.bright(ctx))..msg
+      elseif level=='err' then msg = ac.red(msg) end
+      return ac.red(ac.bright(level.." @ ")).. ac.cyan(ctx)..msg
    end
    if not vres then return end
    if not (level=='err' or level=='warn' or level=='inf') then
@@ -304,7 +304,7 @@ function TableSpec.check(self, obj, vres)
       if sealed then
 	 add_msg(vres, "err", "illegal/invalid entry '".. ts(entry) .. "' in array part. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
-	 vres_add_newline(vres)
+	 -- vres_add_newline(vres)
 	 log("checking array failed")
 	 ret=false
       else
@@ -329,7 +329,7 @@ function TableSpec.check(self, obj, vres)
 	 end
       elseif not self.dict.__other and sealed then
 	 -- unkown key, no __other and sealed -> err!
-	 add_msg(vres, "err", "illegal field "..key.." in sealed dict (value: "..tostring(entry)..")")
+	 add_msg(vres, "err", "illegal field '"..key.."' in sealed dict (value: "..tostring(entry)..")")
 	 ret=false
       elseif not self.dict[key] and is_a_valid_spec(entry, self.dict.__other) then
 	 -- unknown key, but __other legitimizes entry
@@ -342,7 +342,7 @@ function TableSpec.check(self, obj, vres)
 		    "' in sealed dict. Error(s) follow:")
 	    -- add errmsg of __other check
 	    is_a_valid_spec(entry, self.dict.__other, vres)
-	    vres_add_newline(vres)
+	    -- vres_add_newline(vres)
 	    log("checking __other for key "..key.. " failed")
 	    ret=false
 	 else
