@@ -42,6 +42,7 @@ local logmsgs = true
 
 local ac=require("ansicolors")
 local utils=require("utils")
+local ts = tostring
 
 module("umf", package.seeall)
 
@@ -199,7 +200,12 @@ end
 
 --- True as long it is not nil.
 function AnySpec.check(self, obj, vres)
-   return obj==nil
+   log("checking AnySpec spec", ts(obj))
+   if obj==nil then
+      add_msg(vres, "err", "obj is nil")
+      return false
+   end
+   return true
 end
 
 --- Number spec.
@@ -264,6 +270,7 @@ function TableSpec:init()
 end
 
 --- Validate a table spec.
+-- This is the most important function of uMF.
 function TableSpec.check(self, obj, vres)
    local ret=true
 
@@ -276,22 +283,26 @@ function TableSpec.check(self, obj, vres)
    end
 
 
-   --- Check if val is a legal array entry type.
+   --- Check if entry is a legal array entry type.
    local function check_array_entry(entry)
       local sealed = self.sealed == 'both' or self.sealed=='array'
       local arr_spec = self.array or {}
-      for _,sp in ipairs(arr_spec) do if sp:check(entry) then return end end
+      for _,sp in ipairs(arr_spec) do
+	 if sp:check(entry) then return end
+      end
+      print("array checking could not legitimize ", ts(entry))
       if sealed then
 	 add_msg(vres, "err", "illegal/invalid entry array part. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
 	 vres_add_newline(vres)
-	 log("checking array for key failed")
+	 log("checking array failed")
 	 ret=false
       else
 	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
       end
    end
 
+   --- Check if key=entry are valid for the TableSpec 'self'.
    local function check_dict_entry(entry, key)
       -- if key=='__other' then return end ?
       vres_push_context(vres, key)
@@ -301,9 +312,9 @@ function TableSpec.check(self, obj, vres)
       if self.dict[key] then
 	 if not self.dict[key]:check(entry, vres) then
 	    ret=false
-	    log("key found but spec checking failed")
+	    log("key " .. ts(key) .. "found but spec checking failed")
 	 else
-	    log("key found and spec checking OK")
+	    log("key " .. ts(key) .. " found and spec checking OK")
 	 end
       elseif not self.dict.__other and sealed then -- unkown key, no __other and sealed -> err!
 	 add_msg(vres, "err", "illegal field "..key.." in sealed dict (value: "..tostring(entry)..")")
