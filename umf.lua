@@ -158,19 +158,22 @@ ObjectSpec=class("ObjectSpec", TableSpec)
 -- @param level: 'err', 'warn', 'inf'
 -- @param msg string message
 function add_msg(vres, level, msg)
-   local function colorize(level, ctx, msg)
-      if not color then return level .. " @ "..ctx..msg end
-      if level=='inf' then msg = ac.blue(ac.bright(msg))
-      elseif level=='warn' then msg = ac.yellow(msg)
-      elseif level=='err' then msg = ac.red(msg) end
-      return ac.red(ac.bright(level.." @ ")).. ac.cyan(ctx)..msg
+   local function colorize(tag, msg, bright)
+      if not color then return msg end
+      if tag=='inf' then msg = ac.blue(msg)
+      elseif tag=='warn' then msg = ac.yellow(msg)
+      elseif tag=='err' then msg = ac.red(msg)
+      elseif tag=='ctx' then msg = ac.cyan(msg) end
+      if bright then msg = ac.bright(msg) end
+      return msg
    end
+
    if not vres then return end
    if not (level=='err' or level=='warn' or level=='inf') then
       error("add_msg: invalid level: " .. tostring(level))
    end
    local msgs = vres.msgs
-   msgs[#msgs+1]=colorize(level, table.concat(vres.context, '.').. ": ", msg)
+   msgs[#msgs+1] = colorize(level, level.." @ ", true) .. colorize("ctx", table.concat(vres.context, '.')..": ").. colorize(level, msg)
    vres[level] = vres[level] + 1
    return vres
 end
