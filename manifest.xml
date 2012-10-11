@@ -1,0 +1,9 @@
+<package>
+  <description brief="uMF: micro-modeling framework in Lua">
+    
+  </description>
+  <author>Markus Klotzbuecher, markus.klotzbuecher@mech.kuleuven.be</author>
+  <url>http://people.mech.kuleuven.be/~mklotzbucher/</url>
+  <license>Dual LGPL/BSD</license>
+  <review status="unreviewed" notes=""/>
+</package>
