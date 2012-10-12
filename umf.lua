@@ -119,7 +119,7 @@ end
 function table_split(t)
    local arr,dict = {},{}
    for i,v in ipairs(t) do arr[i] = v end
-   for k,v in pairs(t) do if not arr[k] then dict[k]=v end end
+   for k,v in pairs(t) do if arr[k]==nil then dict[k]=v end end
    return arr, dict
 end
 
