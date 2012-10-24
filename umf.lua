@@ -298,14 +298,14 @@ function TableSpec.check(self, obj, vres)
 
 
    --- Check if entry is a legal array entry type.
-   local function check_array_entry(entry)
+   local function check_array_entry(entry,i)
       local sealed = self.sealed == 'both' or self.sealed=='array'
       local arr_spec = self.array or {}
 
       if is_a_valid_spec(entry, arr_spec) then return end
 
       if sealed then
-	 add_msg(vres, "err", "illegal/invalid entry '".. ts(entry) .. "' in array part. Error(s) follow:")
+	 add_msg(vres, "err", "illegal/invalid array entry #"..ts(i).." '".. ts(entry).."'. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
 	 -- vres_add_newline(vres)
 	 log("checking array failed")
@@ -390,7 +390,7 @@ function TableSpec.check(self, obj, vres)
 
    if ret then
       local arr,dct = table_split(obj)
-      utils.foreach(function (e) check_array_entry(e) end, arr)
+      utils.foreach(function (e,i) check_array_entry(e,i) end, arr)
       utils.foreach(function (e,k) check_dict_entry(e, k) end, dct)
       check_dict_optionals(dct)
    end
