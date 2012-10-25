@@ -499,10 +499,8 @@ function check(obj, spec, verb)
    elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"..msg); return false end
 
    local vres = { msgs={}, err=0, warn=0, inf=0, context={} }
-   local depth = vres_push_context(vres, "root")
    spec:check(obj, vres)
    log("check: OUT")
-   vres_pop_context(vres, depth)
    if verb then print_vres(vres) end
    return vres.err, vres
 end
