@@ -47,11 +47,12 @@ local ts = tostring
 
 module("umf", package.seeall)
 
+-- log stuff
 local ind, indmul, indchar = 0, 4, ' '
 function ind_inc() ind=ind+1 end
 function ind_dec() ind=ind-1 end
-function log(...) io.write(string.rep(indchar, ind*indmul)); print(...) end
--- function log(...) return end
+-- function log(...) io.write(string.rep(indchar, ind*indmul)); print(...) end
+function log(...) return end
 
 --- microObjects:
 local function __class(name, super)
