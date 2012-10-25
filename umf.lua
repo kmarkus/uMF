@@ -43,7 +43,7 @@ local logmsgs = true
 local ac=require("ansicolors")
 local utils=require("utils")
 local ts = tostring
-local strict = require("strict")
+-- local strict = require("strict")
 
 module("umf", package.seeall)
 
