@@ -332,7 +332,7 @@ function TableSpec.check(self, obj, vres)
       -- Invalid or illegal
       if sealed then
 	 log("check_array_entry: #"..ts(i).." FAILED! (illegal/invalid), because:")
-	 add_msg(vres, "err", "illegal/invalid array entry #"..ts(i).." '".. ts(entry).."'. Error(s) follow:")
+	 -- add_msg(vres, "err", "illegal/invalid array entry #"..ts(i).." '".. ts(entry).."'. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
 	 -- vres_add_newline(vres)
 	 log("check_array_entry: OUT #"..ts(i).." FAILED")
@@ -371,8 +371,7 @@ function TableSpec.check(self, obj, vres)
 	 -- unkown key AND __other does not legitimze: if unsealed ->
 	 -- fine. If sealed, report the errors of all checks.
 	 if sealed then
-	    add_msg(vres, "err", "checking __other failed for undeclared key '".. key..
-		    "' in sealed dict. Error(s) follow:")
+	    -- gadd_msg(vres, "err", "checking __other failed for undeclared key '".. key.."' in sealed dict. Error(s) follow:")
 	    -- add errmsg of __other check
 	    is_a_valid_spec(entry, self.dict.__other, vres)
 	    -- vres_add_newline(vres)
@@ -421,7 +420,7 @@ function TableSpec.check(self, obj, vres)
    end
 
    local name = self.name or "unnamed"
-   local depth = vres_push_context(vres, name)
+   -- local depth = vres_push_context(vres, name)
    if self.precheck then ret=self.precheck(self, obj, vres) end -- precheck hook
 
    if ret then
@@ -434,7 +433,7 @@ function TableSpec.check(self, obj, vres)
    if self.postcheck and ret then ret=self.postcheck(self, obj, vres) end
 
    log("checked table spec "..name..", result: "..tostring(ret))
-   vres_pop_context(vres, depth)
+   -- vres_pop_context(vres, depth)
    ind_dec()
    return ret
 end
@@ -461,7 +460,7 @@ function ObjectSpec.check(self, obj, vres)
    local res=true
    ind_inc()
    log("validating object spec of type " .. self.name)
-   local depth = vres_push_context(vres, self.name)
+   -- local depth = vres_push_context(vres, self.name)
    if uoo_type(self.type) ~= 'class' then
       add_msg(vres, "err", "type field of ObjectSpec "..tostring(self.name).. " is not a umf class")
       res=false
@@ -472,7 +471,7 @@ function ObjectSpec.check(self, obj, vres)
       add_msg(vres, "err", "'".. tostring(obj) .."' not an instance of '"..tostring(self.type).."'")
       res=false
    end
-   vres_pop_context(vres, depth)
+   -- vres_pop_context(vres, depth)
    if res then res=TableSpec.check(self, obj, vres) end
    log("validated object spec of type " ..self.name..": "..ts(res))
    ind_dec()
