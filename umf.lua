@@ -158,6 +158,16 @@ TableSpec=class("TableSpec", Spec)
 ClassSpec=class("ClassSpec", TableSpec)
 ObjectSpec=class("ObjectSpec", TableSpec)
 
+-- concatenate the validation context in a smart way, ie. no dots
+-- before [].
+local function concat_ctx(ctx,sep)
+   local ret = ""
+   for i,v in ipairs(ctx) do
+      if string.match(v, "%[(%d+)]") then ret=ret..v else ret=ret..sep..v end
+   end
+   return ret
+end
+
 --- Add an error to the validation result struct.
 -- @param validation structure
 -- @param level: 'err', 'warn', 'inf'
@@ -178,7 +188,7 @@ function add_msg(vres, level, msg)
       error("add_msg: invalid level: " .. tostring(level))
    end
    local msgs = vres.msgs
-   msgs[#msgs+1] = colorize(level, level.." @ ", true) .. colorize("ctx", table.concat(vres.context, '.')..": ").. colorize(level, msg)
+   msgs[#msgs+1] = colorize(level, level.." @ ", true) .. colorize("ctx", concat_ctx(vres.context, '.')..": ").. colorize(level, msg)
    vres[level] = vres[level] + 1
    return vres
 end
@@ -318,13 +328,16 @@ function TableSpec.check(self, obj, vres)
    --- Check if entry is a legal array entry type.
    local function check_array_entry(entry,i)
       ind_inc()
+      local depth = vres_push_context(vres, "["..ts(i).."]")
       log("check_array_entry: IN  #"..ts(i).." '"..ts(entry).."'")
+
       local sealed = self.sealed == 'both' or self.sealed=='array'
       local arr_spec = self.array or {}
 
       -- if entry is valid, there is nothing else to do:
       if is_a_valid_spec(entry, arr_spec) then
 	 log("check_array_entry: OUT #"..ts(i).." Ok!")
+	 vres_pop_context(vres, depth)
 	 ind_dec();
 	 return
       end
@@ -342,6 +355,7 @@ function TableSpec.check(self, obj, vres)
 	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
       end
       ind_dec()
+      vres_pop_context(vres, depth)
    end
 
    --- Check if key=entry are valid for the TableSpec 'self'.
