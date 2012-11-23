@@ -51,7 +51,10 @@ module("umf", package.seeall)
 local ind, indmul, indchar = 0, 4, ' '
 function ind_inc() ind=ind+1 end
 function ind_dec() ind=ind-1 end
--- function log(...) io.write(string.rep(indchar, ind*indmul)); print(...) end
+
+-- Enable logging by uncomenting the following line and commenting the
+-- subsequent:
+--function log(...) io.write(string.rep(indchar, ind*indmul)); print(...) end
 function log(...) return end
 
 --- microObjects:
@@ -345,7 +348,7 @@ function TableSpec.check(self, obj, vres)
       -- Invalid or illegal
       if sealed then
 	 log("check_array_entry: #"..ts(i).." FAILED! (illegal/invalid), because:")
-	 -- add_msg(vres, "err", "illegal/invalid array entry #"..ts(i).." '".. ts(entry).."'. Error(s) follow:")
+	 add_msg(vres, "err", "illegal/invalid array entry #"..ts(i).." '".. ts(entry).."'. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
 	 -- vres_add_newline(vres)
 	 log("check_array_entry: OUT #"..ts(i).." FAILED")
