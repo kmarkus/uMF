@@ -96,11 +96,20 @@ function Object.static:classname() return self.name end
 function Object.static:type() return 'class' end
 function Object:init() return end
 
+--- Return the uoo type ('class' or 'instance')
 function uoo_type(x)
    if not x then return false end
    local mt = getmetatable(x)
    if mt and mt.__index==x.static then return 'class'
    elseif mt and mt.class then return 'instance' end
+   return false
+end
+
+--- Return the class name of the given object.
+function uoo_class(o)
+   if uoo_type(o) == 'instance' then
+      return obj:class().name
+   end
    return false
 end
 
@@ -512,7 +521,7 @@ function check(obj, spec, verb)
    if verb then print("checking spec "..(spec.name or "unnamed")) end
    local ok, ret = pcall(instance_of, Spec, spec)
    if not ok then print("err: second argument not an Object (should be Spec instance)"); return false
-   elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"..msg); return false end
+   elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"); return false end
 
    local vres = { msgs={}, err=0, warn=0, inf=0, context={} }
    spec:check(obj, vres)
