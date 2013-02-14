@@ -1,7 +1,7 @@
 --
 -- This file is part of uMF.
 --
--- (C) 2012 Markus Klotzbuecher, markus.klotzbuecher@mech.kuleuven.be,
+-- (C) 2012,2013 Markus Klotzbuecher, markus.klotzbuecher@mech.kuleuven.be,
 -- Department of Mechanical Engineering, Katholieke Universiteit
 -- Leuven, Belgium.
 --
@@ -57,9 +57,8 @@ function ind_dec() ind=ind-1 end
 --function log(...) io.write(string.rep(indchar, ind*indmul)); print(...) end
 function log(...) return end
 
---- microObjects:
-local function __class(name, super)
-   local klass = { name=name, superclass=super, static = {}, iops={}, __class_identifier=true }
+--- microObjects, heavily inspired by middleclass.
+local function __class(name, super)   local klass = { name=name, superclass=super, static = {}, iops={}, __class_identifier=true }
    local iops = klass.iops
    iops.__index = iops
 
