@@ -47,6 +47,7 @@ function build_ident_tree(tl)
 	    top_of_stack[#top_of_stack] = newtab -- push to array
 	    stack[#stack+1] = newtab -- push
 	    i=i+1
+	    -- missing: simple
 	 elseif is_closing_bracket(i) then
 	    stack[#stack]._estop=tl[i]
 	    stack[#stack]=nil -- pop
@@ -79,7 +80,7 @@ print("data\n", data)
 
 local tl = filter_whitespace(lex_luastr(data))
 
--- for k,v in ipairs(tl) do print(utils.tab2str(v)) end
+for k,v in ipairs(tl) do print(utils.tab2str(v)) end
 
 ident_tree = build_ident_tree(tl)
 
