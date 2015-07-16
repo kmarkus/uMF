@@ -1,10 +1,15 @@
 uMF: micro modelling framework (uMF)
 ====================================
 
-uMF is a minimal, yet powerful modeling framework for the Lua
-language. It permits defining and validating models by means of
-placing structural, composable contraints on Lua tables.
+uMF is a minimal, yet powerful modeling framework (DSL workbench) for
+the Lua language. It permits defining and validating models by means
+of placing structural, composable contraints on Lua tables.
 
+**Features**
+
+- supports all basic types and custom objects
+- extensible, customizable, constraint language
+- model checking produces high quality error messages
 
 Simple Example
 --------------
@@ -31,6 +36,23 @@ Vector3DSpec = umf.TableSpec{
 Further documentation will follow shortly. For now check out the
 examples in the `test/` subdirectory.
 
+
+Defining Model Elements
+-----------------------
+
+
+Defining Constraints
+--------------------
+
+
+Resolving references
+--------------------
+
+
+Future ideas
+------------
+
+- 
 
 Acknowledgement
 ---------------
