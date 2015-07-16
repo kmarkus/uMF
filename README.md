@@ -7,9 +7,10 @@ of placing structural, composable contraints on Lua tables.
 
 **Features**
 
-- supports all basic types and custom objects
+- supports defining constraints on all basic Lua types, tables and custom objects
 - extensible, customizable, constraint language
 - model checking produces high quality error messages
+
 
 Simple Example
 --------------
@@ -48,11 +49,27 @@ Defining Constraints
 Resolving references
 --------------------
 
+NOT implemented.
 
-Future ideas
-------------
+resolve `{type, <target>}` to point to the object whos field `{name}`
+matches the value of `<target>`
 
-- 
+matching rules:
+- absolute if starts with a `/`
+- relative without slash
+- relative parent references `../`
+
+Pitfalls
+--------
+
+It's a common pitfall to assign a spec class instead of an instance
+when defining a constraint model.
+
+Future work
+-----------
+
+- ECore import/export
+- json-schema export
 
 Acknowledgement
 ---------------
