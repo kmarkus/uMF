@@ -272,10 +272,22 @@ end
 --- Validate a string spec.
 function StringSpec.check(self, obj, vres)
    log("checking obj '"..tostring(obj).."' against StringSpec")
+
    local t = type(obj)
-   if t == "string" then return true end
-   add_msg(vres, "err", "not a string but a " ..t)
-   return false
+
+   if t ~= "string" then
+      add_msg(vres, "err", "not a string but a " ..t)
+      return false
+   end
+
+   if self.regexp then
+      local res = string.match(self.regexp, obj)
+      if not res then
+	 add_msg(vres, "err", "regexp "..tostring(self.regexp).. " didn't match string "..tostring(obj))
+	 return false
+      end
+   end
+   return true
 end
 
 --- Validate a boolean spec.
