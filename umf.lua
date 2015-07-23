@@ -281,7 +281,7 @@ function StringSpec.check(self, obj, vres)
    end
 
    if self.regexp then
-      local res = string.match(self.regexp, obj)
+      local res = string.match(obj, self.regexp)
       if not res then
 	 add_msg(vres, "err", "regexp "..tostring(self.regexp).. " didn't match string "..tostring(obj))
 	 return false
