@@ -28,9 +28,9 @@ Vector3DSpec = umf.TableSpec{
    name = 'Vector3D',
    sealed = 'both',
    dict = {
-      x = umf.NumberSpec{},
-      y = umf.NumberSpec{},
-      z = umf.NumberSpec{},
+	  x = umf.NumberSpec{},
+	  y = umf.NumberSpec{},
+	  z = umf.NumberSpec{},
    },
 }
 ```
@@ -101,6 +101,20 @@ Future work
 - json-schema import/export
 - ECore import/export
 
+Known issues
+-------------
+
+**Problem**
+
+Obscure error: "umf.lua:128: instance_of: second argument not an
+instance" if a spec is declared as a plain table instead of a Spec
+instance.
+
+**Solution**
+
+Extend instance_of to return an error msg instead of
+assert'ing. Better: it's caused by an invalid spec, hence the spec
+should be validated against against the metaspec.
 
 Acknowledgement
 ---------------
@@ -108,13 +122,3 @@ Acknowledgement
 The research leading to these results has received funding from the
 European Community's Seventh Framework Programme (FP7/2007-2013) under
 grant agreement no. FP7-ICT-231940-BRICS (Best Practice in Robotics)
-
-
-
-
-
-
-
-
-
-

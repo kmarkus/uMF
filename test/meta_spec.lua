@@ -8,7 +8,7 @@ return ObjectSpec{
    dict={
       name=StringSpec{},
       sealed=EnumSpec{"both", "dict", "array", false},
-      type=ClassSpec{ name='metaspec2', type=umf.Object, sealed=false, dict={} },
+      type=ClassSpec{ name='metaspec-type', type=umf.Object, sealed=false, dict={} },
 
       -- it may have a dict field, described by the following
       -- TableSpec:
