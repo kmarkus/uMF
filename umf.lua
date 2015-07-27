@@ -515,6 +515,49 @@ function ObjectSpec.check(self, obj, vres)
    return res
 end
 
+--- Resolve string links to objects
+-- Format: "<class_name>:<object_name>
+-- @param root object
+-- @param verbose (optional)
+-- @return false if link resolving failed, true otherwise
+function resolve_links(obj, verbose)
+   local failures = 0
+   function __resolve_links(v,k)
+      for kk,vv in pairs(v) do
+	 if type(vv) == 'string' then
+	    -- check if this is a link
+	    local klass, objid = string.match(vv, "(%g+)#(%g+)")
+	    if klass then
+	       -- find the target obj
+	       local no_dups = { }
+	       local tgts = utils.maptree(
+		  function (v,k)
+		     if no_dups[v] then return end
+		     no_dups[v]=true
+		     return { k=k, v=v }
+		  end, obj,
+		  function(v) return uoo_class(v)==klass and v.name==objid end)
+	       if #tgts == 0 then
+		  print(ac.red("resolve_links: failed to resolve " .. ac.bright(ts(klass)..":"..ts(objid))))
+		  failures = failures + 1
+	       elseif #tgts > 1 then
+		  print(ac.red("resolve_links: multiple targets found for ".. ac.bright(ts(klass)..":"..ts(objid))))
+		  print(utils.tab2str(tgts))
+		  failures = failures + 1
+	       else
+		  if verbose then print("resolve_links: successfully resolved target "  .. ts(klass)..":"..ts(objid)) end
+		  v[kk] = tgts[1].v
+	       end
+	    end
+	 end
+      end
+   end
+
+   utils.maptree( __resolve_links, obj, function (v) return type(v) == 'table' end)
+   return (failures == 0)
+end
+
+
 --- Print the validation results.
 function print_vres(vres)
    utils.foreach(function(mes) print(mes) end, vres.msgs)
