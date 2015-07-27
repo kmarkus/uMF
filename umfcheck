@@ -82,5 +82,5 @@ local model = dofile(modelfile)
 if not spec then print("err: no spec could be loaded from file "..specfile) end
 if not model then print("err: no model could be loaded from file "..modelfile) end
 
-if umf.check(model, spec, (not argtab['-q']))~=0 then os.exit(0)
+if umf.check(model, spec, (not argtab['-q']))==0 then os.exit(0)
 else os.exit(2) end
