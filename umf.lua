@@ -538,14 +538,14 @@ function resolve_links(obj, verbose)
 		  end, obj,
 		  function(v) return uoo_class(v)==klass and v.name==objid end)
 	       if #tgts == 0 then
-		  print(ac.red("resolve_links: failed to resolve " .. ac.bright(ts(klass)..":"..ts(objid))))
+		  print(ac.red("resolve_links: failed to resolve " .. ac.bright(ts(klass).."#"..ts(objid))))
 		  failures = failures + 1
 	       elseif #tgts > 1 then
-		  print(ac.red("resolve_links: multiple targets found for ".. ac.bright(ts(klass)..":"..ts(objid))))
+		  print(ac.red("resolve_links: multiple targets found for ".. ac.bright(ts(klass).."#"..ts(objid))))
 		  print(utils.tab2str(tgts))
 		  failures = failures + 1
 	       else
-		  if verbose then print("resolve_links: successfully resolved target "  .. ts(klass)..":"..ts(objid)) end
+		  if verbose then print("resolve_links: successfully resolved target "  .. ts(klass).."#"..ts(objid)) end
 		  v[kk] = tgts[1].v
 	       end
 	    end
