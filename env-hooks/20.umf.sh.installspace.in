@@ -1,0 +1,13 @@
+#!/bin/sh
+if [ "x$LUA_PATH" = "x" ]; then
+   LUA_PATH=";"
+fi
+message (WARNING "istalling luapath")
+
+export LUA_PATH="$LUA_PATH;@CMAKE_INSTALL_PREFIX@/share/@PROJECT_NAME@/?.lua"
+
+#if [ "x$LUA_CPATH" = "x" ]; then
+#   LUA_CPATH=";"
+#fi
+#export LUA_CPATH="$LUA_CPATH;@CMAKE_INSTALL_PREFIX@/lib/?.so"
+                                                                      
