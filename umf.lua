@@ -1,9 +1,7 @@
 --
 -- This file is part of uMF.
 --
--- (C) 2012,2013 Markus Klotzbuecher, markus.klotzbuecher@mech.kuleuven.be,
--- Department of Mechanical Engineering, Katholieke Universiteit
--- Leuven, Belgium.
+-- (C) 2012-2017 Markus Klotzbuecher, mk@marumbi.de
 --
 -- You may redistribute this software and/or modify it under either
 -- the terms of the GNU Lesser General Public License version 2.1
