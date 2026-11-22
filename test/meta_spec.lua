@@ -7,15 +7,15 @@ return ObjectSpec{
    -- this is what the body of a spec might look like:
    dict={
       name=StringSpec{},
-      sealed=EnumSpec{"both", "dict", "array", false},
+      sealed=EnumSpec{"both", "dict", "array", true, false},
       type=ClassSpec{ name='metaspec-type', type=umf.Object, sealed=false, dict={} },
 
       -- it may have a dict field, described by the following
       -- TableSpec:
       dict=TableSpec{
-	 sealed={}, -- true?
-	 -- any field should be an instance of Spec
-	 dict={ __other=TableSpec{umf.Spec{}} },
+	 sealed=false,
+	 -- any field should be a Spec or a list of alternative Specs
+	 dict={ __other={ umf.Spec{}, TableSpec{ array={umf.Spec{}} } } },
 	 array={umf.Spec{}},
       },
       optional=TableSpec{

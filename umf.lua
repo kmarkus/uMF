@@ -26,10 +26,16 @@ local ind, indmul, indchar = 0, 4, ' '
 function ind_inc() ind=ind+1 end
 function ind_dec() ind=ind-1 end
 
--- Enable logging by uncomenting the following line and commenting the
--- subsequent:
---function log(...) io.write(string.rep(indchar, ind*indmul)); print(...) end
-function log(...) return end
+--- Debug log, enable with umf.log_enabled=true.
+-- Arguments are joined with ' ' and converted with tostring only when
+-- enabled, so call sites pass pieces instead of concatenating.
+log_enabled = false
+function log(...)
+   if not log_enabled then return end
+   local n, t = select('#', ...), {...}
+   for i=1,n do t[i]=tostring(t[i]) end
+   io.write(string.rep(indchar, ind*indmul), table.concat(t, ' ', 1, n), '\n')
+end
 
 --- microObjects, heavily inspired by middleclass.
 local function __class(name, super)   local klass = { name=name, superclass=super, static = {}, iops={}, __class_identifier=true }
@@ -71,7 +77,7 @@ function Object:init() return end
 
 --- Return the uoo type ('class' or 'instance')
 function uoo_type(x)
-   if not x then return false end
+   if type(x) ~= 'table' then return false end
    local mt = getmetatable(x)
    if mt and mt.__index==x.static then return 'class'
    elseif mt and mt.class then return 'instance' end
@@ -87,7 +93,7 @@ function uoo_class(o)
 end
 
 function subclass_of(subklass, klass)
-   function sc_of(sc, k)
+   local function sc_of(sc, k)
       if not sc then return false end
       if sc==k then return true end
       return sc_of(sc:super(), k)
@@ -121,9 +127,14 @@ Spec=class("Spec")
 -- @param obj object to validate
 -- @param vres validation result structure (optional)
 -- @return boolean return value meaning success
+--- True if x is a Spec instance.
+function is_spec(x)
+   return uoo_type(x) == 'instance' and instance_of(Spec, x)
+end
+
 function Spec.check(self, obj, vres)
-   if not instance_of(Spec, obj) then
-      add_msg(vres, "err", tostring(obj).." not an instance of "..tostring(self.type))
+   if not is_spec(obj) then
+      add_msg(vres, "err", tostring(obj).." not an instance of umf.Spec")
       return false
    end
    return true
@@ -212,7 +223,7 @@ end
 
 --- True as long it is not nil.
 function AnySpec.check(self, obj, vres)
-   log("checking obj '"..tostring(obj).."' against AnySpec")
+   log("checking obj '", obj, "' against AnySpec")
    if obj==nil then
       add_msg(vres, "err", "obj is nil")
       return false
@@ -226,10 +237,14 @@ function NumberSpec.is_a(self, obj)
 end
 
 function NumberSpec.check(self, obj, vres)
-   log("checking obj '"..tostring(obj).."' against NumberSpec")
+   log("checking obj '", obj, "' against NumberSpec")
    local t = type(obj)
    if t ~= "number" then
       add_msg(vres, "err", "not a number but a " ..t)
+      return false
+   end
+   if obj ~= obj then
+      add_msg(vres, "err", "number value is NaN")
       return false
    end
    if self.min and obj < self.min then
@@ -245,7 +260,7 @@ end
 
 --- Validate a string spec.
 function StringSpec.check(self, obj, vres)
-   log("checking obj '"..tostring(obj).."' against StringSpec")
+   log("checking obj '", obj, "' against StringSpec")
 
    local t = type(obj)
 
@@ -266,7 +281,7 @@ end
 
 --- Validate a boolean spec.
 function BoolSpec.check(self, obj, vres)
-   log("checking obj '"..ts(obj).."' against BooleanSpec")
+   log("checking obj '", obj, "' against BooleanSpec")
    local t = type(obj)
    if t == "boolean" then return true end
    add_msg(vres, "err", "not a boolean but a " ..t)
@@ -275,7 +290,7 @@ end
 
 --- Validate a function spec.
 function FunctionSpec.check(self, obj, vres)
-   log("checking obj '"..tostring(obj).."' against FunctionSpec")
+   log("checking obj '", obj, "' against FunctionSpec")
    local t = type(obj)
    if t == "function" then return true end
    add_msg(vres, "err", "not a function but a " ..t)
@@ -284,14 +299,29 @@ end
 
 --- Validate an enum spec.
 function EnumSpec.check(self, obj, vres)
-   log("checking obj '"..tostring(obj).."' against EnumSpec")
+   log("checking obj '", obj, "' against EnumSpec")
    if utils.table_has(self, obj) then return true end
-   add_msg(vres, "err", "invalid enum value: " .. tostring(obj) .. " (valid: " .. table.concat(self, ", ")..")")
+   add_msg(vres, "err", "invalid enum value: " .. tostring(obj) ..
+	      " (valid: " .. table.concat(utils.imap(tostring, self), ", ")..")")
+   return false
 end
+
+local valid_sealed = { both=true, dict=true, array=true }
 
 function TableSpec:init()
    self.dict = self.dict or {}
    self.array = self.array or {}
+   if self.sealed == true then self.sealed = 'both' end
+   if self.sealed and not valid_sealed[self.sealed] then
+      error("TableSpec "..ts(self.name)..": invalid sealed value '"..ts(self.sealed)..
+	       "' (valid: 'both', 'dict', 'array', true, false)", 3)
+   end
+end
+
+-- context string for a dict key
+local function key2ctx(key)
+   if type(key) == 'string' then return key end
+   return "["..ts(key).."]"
 end
 
 --- Validate a table spec.
@@ -307,7 +337,7 @@ function TableSpec.check(self, obj, vres)
       if uoo_type(entry) == 'instance' then
 	 for _,spec in ipairs(spec_tab) do
 	    if instance_of(ObjectSpec, spec) and instance_of(spec.type, entry) then
-	       log("is_a_valid_spec: strongly matched type "..spec.type.name)
+	       log("is_a_valid_spec: strongly matched type ", spec.type.name)
 	       ind_dec()
 	       return spec:check(entry, vres)
 	    end
@@ -326,14 +356,14 @@ function TableSpec.check(self, obj, vres)
    local function check_array_entry(entry,i)
       ind_inc()
       local depth = vres_push_context(vres, "["..ts(i).."]")
-      log("check_array_entry: IN  #"..ts(i).." '"..ts(entry).."'")
+      log("check_array_entry: IN  #", i, " '", entry, "'")
 
       local sealed = self.sealed == 'both' or self.sealed=='array'
       local arr_spec = self.array or {}
 
       -- if entry is valid, there is nothing else to do:
       if is_a_valid_spec(entry, arr_spec) then
-	 log("check_array_entry: OUT #"..ts(i).." Ok!")
+	 log("check_array_entry: OUT #", i, " Ok!")
 	 vres_pop_context(vres, depth)
 	 ind_dec();
 	 return
@@ -341,15 +371,15 @@ function TableSpec.check(self, obj, vres)
 
       -- Invalid or illegal
       if sealed then
-	 log("check_array_entry: #"..ts(i).." FAILED! (illegal/invalid), because:")
+	 log("check_array_entry: #", i, " FAILED! (illegal/invalid), because:")
 	 add_msg(vres, "err", "illegal/invalid array entry #"..ts(i).." '".. ts(entry).."'. Error(s) follow:")
 	 is_a_valid_spec(entry, arr_spec, vres)
 	 -- vres_add_newline(vres)
-	 log("check_array_entry: OUT #"..ts(i).." FAILED")
+	 log("check_array_entry: OUT #", i, " FAILED")
 	 ret=false
       else
-	 log("check_array_entry: OUT #"..ts(i).." FAILED! (but unsealed)")
-	 add_msg(vres, "inf", "unkown entry '"..tostring(entry) .."' in array part")
+	 log("check_array_entry: OUT #", i, " FAILED! (but unsealed)")
+	 add_msg(vres, "inf", "unknown entry '"..tostring(entry) .."' in array part")
       end
       ind_dec()
       vres_pop_context(vres, depth)
@@ -359,37 +389,39 @@ function TableSpec.check(self, obj, vres)
    local function check_dict_entry(entry, key)
       -- if key=='__other' then return end ?
       ind_inc()
-      log("check_dict_entry: "..ts(key).."='"..ts(entry).."'")
-      local depth = vres_push_context(vres, key)
+      log("check_dict_entry: ", key, "='", entry, "'")
+      local depth = vres_push_context(vres, key2ctx(key))
       local sealed = self.sealed == 'both' or self.sealed=='dict'
+      -- a model key '__other' must not pick up the spec list
+      local kspec = key ~= '__other' and self.dict[key] or nil
 
       -- known key, check it.
-      if self.dict[key] then
-	 if not self.dict[key]:check(entry, vres) then
+      if kspec then
+	 if not kspec:check(entry, vres) then
 	    ret=false
-	    log("key '" .. ts(key) .. "' found but spec checking failed")
+	    log("key '", key, "' found but spec checking failed")
 	 else
-	    log("key '" .. ts(key) .. "' found and spec checking OK")
+	    log("key '", key, "' found and spec checking OK")
 	 end
       elseif not self.dict.__other and sealed then
-	 -- unkown key, no __other and sealed -> err!
-	 add_msg(vres, "err", "illegal field '"..key.."' in sealed dict (value: "..tostring(entry)..")")
+	 -- unknown key, no __other and sealed -> err!
+	 add_msg(vres, "err", "illegal field '"..ts(key).."' in sealed dict (value: "..tostring(entry)..")")
 	 ret=false
-      elseif not self.dict[key] and is_a_valid_spec(entry, self.dict.__other) then
+      elseif is_a_valid_spec(entry, self.dict.__other) then
 	 -- unknown key, but __other legitimizes entry
 	 log("found matching spec in __other table")
-      elseif not self.dict[key] and not is_a_valid_spec(entry, self.dict.__other) then
-	 -- unkown key AND __other does not legitimze: if unsealed ->
+      elseif not is_a_valid_spec(entry, self.dict.__other) then
+	 -- unknown key AND __other does not legitimize: if unsealed ->
 	 -- fine. If sealed, report the errors of all checks.
 	 if sealed then
 	    -- gadd_msg(vres, "err", "checking __other failed for undeclared key '".. key.."' in sealed dict. Error(s) follow:")
 	    -- add errmsg of __other check
 	    is_a_valid_spec(entry, self.dict.__other, vres)
 	    -- vres_add_newline(vres)
-	    log("checking __other for key "..key.. " failed")
+	    log("checking __other for key ", key, " failed")
 	    ret=false
 	 else
-	    add_msg(vres, "inf", "ignoring unkown field "..key.." in unsealed dict")
+	    add_msg(vres, "inf", "ignoring unknown field "..ts(key).." in unsealed dict")
 	 end
       else error("should not get here") end
       vres_pop_context(vres, depth)
@@ -401,7 +433,7 @@ function TableSpec.check(self, obj, vres)
    local function check_dict_optionals(dct)
       -- build a list of non-optionals
       ind_inc()
-      nopts={}
+      local nopts={}
       local optional=self.optional or {}
       for field,spec in pairs(self.dict) do
 	 if field~='__other' and not utils.table_has(optional, field) then
@@ -420,7 +452,7 @@ function TableSpec.check(self, obj, vres)
    end
 
    ind_inc()
-   log("checking table spec "..(self.name or "unnamed"))
+   log("checking table spec ", (self.name or "unnamed"))
 
    -- check we have a table
    local t = type(obj)
@@ -451,7 +483,7 @@ function TableSpec.check(self, obj, vres)
    end
 
 
-   log("checked table spec "..name..", result: "..tostring(ret))
+   log("checked table spec ", name, ", result: ", ret)
    -- vres_pop_context(vres, depth)
    ind_dec()
    return ret
@@ -460,12 +492,14 @@ end
 --- Check a class spec.
 function ClassSpec.check(self, c, vres)
    ind_inc()
-   log("validating class spec of type " .. self.name)
-   local depth = vres_push_context(vres, self.name)
+   log("validating class spec of type ", self.name)
+   local depth = vres_push_context(vres, ts(self.name or "unnamed"))
 
    -- check that they are classes
-   if not uoo_type(c)=='class' or not subclass_of(c, self.type) then
+   if uoo_type(c) ~= 'class' or uoo_type(self.type) ~= 'class' or not subclass_of(c, self.type) then
       add_msg(vres, "err", "'"..tostring(c) .."' not of (sub-)class '"..tostring(self.type).."'")
+      vres_pop_context(vres, depth)
+      ind_dec()
       return false
    end
    vres_pop_context(vres, depth)
@@ -478,7 +512,7 @@ end
 function ObjectSpec.check(self, obj, vres)
    local res=true
    ind_inc()
-   log("validating object spec of type " .. self.name)
+   log("validating object spec of type ", self.name)
    -- local depth = vres_push_context(vres, self.name)
    if uoo_type(self.type) ~= 'class' then
       add_msg(vres, "err", "type field of ObjectSpec "..tostring(self.name).. " is not a umf class")
@@ -492,7 +526,7 @@ function ObjectSpec.check(self, obj, vres)
    end
    -- vres_pop_context(vres, depth)
    if res then res=TableSpec.check(self, obj, vres) end
-   log("validated object spec of type " ..self.name..": "..ts(res))
+   log("validated object spec of type ", self.name, ": ", res)
    ind_dec()
    return res
 end
