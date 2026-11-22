@@ -557,44 +557,51 @@ function ObjectSpec.check(self, obj, vres)
 end
 
 --- Resolve string links to objects
--- Format: "<class_name>:<object_name>
+-- Format: "<class_name>#<object_name>", the whole string must match,
+-- <class_name> may only contain alphanumerics, "_" and ".".
+-- Targets are uoo instances of class <class_name> with name=<object_name>.
 -- @param root object
 -- @param verbose (optional)
 -- @return false if link resolving failed, true otherwise
-function resolve_links(obj, verbose)
+function resolve_links(root, verbose)
    local failures = 0
-   function __resolve_links(v,k)
-      for kk,vv in pairs(v) do
-	 if type(vv) == 'string' then
-	    -- check if this is a link
-	    local klass, objid = string.match(vv, "(%g+)#(%g+)")
-	    if klass then
-	       -- find the target obj
-	       local no_dups = { }
-	       local tgts = utils.maptree(
-		  function (v,k)
-		     if no_dups[v] then return end
-		     no_dups[v]=true
-		     return { k=k, v=v }
-		  end, obj,
-		  function(v) return uoo_class(v)==klass and v.name==objid end)
-	       if #tgts == 0 then
-		  print(ac.red("resolve_links: failed to resolve " .. ac.bright(ts(klass).."#"..ts(objid))))
-		  failures = failures + 1
-	       elseif #tgts > 1 then
-		  print(ac.red("resolve_links: multiple targets found for ".. ac.bright(ts(klass).."#"..ts(objid))))
-		  print(utils.tab2str(tgts))
-		  failures = failures + 1
-	       else
-		  if verbose then print("resolve_links: successfully resolved target "  .. ts(klass).."#"..ts(objid)) end
-		  v[kk] = tgts[1].v
-	       end
+
+   -- collect all tables once (incl. root) before rewriting links, so
+   -- resolved links are neither walked again nor loop on cycles.
+   local nodes, seen, targets = {}, {}, {}
+   local function collect(t)
+      if seen[t] then return end
+      seen[t] = true
+      nodes[#nodes+1] = t
+      local klass = uoo_class(t)
+      if klass and t.name ~= nil then
+	 local id = klass.."#"..ts(t.name)
+	 targets[id] = targets[id] or {}
+	 table.insert(targets[id], t)
+      end
+      for _,v in pairs(t) do
+	 if type(v) == 'table' then collect(v) end
+      end
+   end
+   collect(root)
+
+   for _,node in ipairs(nodes) do
+      for k,v in pairs(node) do
+	 if type(v) == 'string' and string.match(v, "^[%w_%.]+#[^#%s]+$") then
+	    local tgts = targets[v] or {}
+	    if #tgts == 0 then
+	       print(ac.red("resolve_links: failed to resolve " .. ac.bright(v)))
+	       failures = failures + 1
+	    elseif #tgts > 1 then
+	       print(ac.red("resolve_links: multiple targets found for ".. ac.bright(v)))
+	       failures = failures + 1
+	    else
+	       if verbose then print("resolve_links: successfully resolved target " .. v) end
+	       node[k] = tgts[1]
 	    end
 	 end
       end
    end
-
-   utils.maptree( __resolve_links, obj, function (v) return type(v) == 'table' end)
    return (failures == 0)
 end
 
