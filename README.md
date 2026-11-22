@@ -48,10 +48,22 @@ These forms are equivalent to the long ones and can be mixed with them:
 | `__other = { StringSpec{} }`                | `__other = StringSpec{}`                  |
 | list of alternatives `{ A, B }`             | `umf.oneof{ A, B }`, also as a dict value |
 | `sealed = 'both'`                           | `sealed = true`                           |
+| `umf.NumberSpec{}`                          | `umf.number{}`                            |
 
 A dict value can be a list of alternatives, e.g. `x = { NumberSpec{},
 StringSpec{} }`. `umf.oneof{}` does the same and also works where a single spec
 is expected, e.g. nested inside another list.
+
+Short constructors exist for all specs: `umf.any`, `umf.number`, `umf.string`,
+`umf.bool`, `umf.func`, `umf.enum`, `umf.table`, `umf.classof` (ClassSpec,
+`umf.class` creates classes) and `umf.object`. They are the spec classes
+themselves, so `umf.number{min=0}` is `NumberSpec{min=0}`.
+
+```Lua
+Vector3DSpec = umf.table{ name='Vector3D', sealed=true,
+                          dict={ x=umf.number{}, y=umf.number{},
+                                 z=umf.optional(umf.number{}) } }
+```
 
 Debug output of the checker is enabled with `umf.log_enabled = true`.
 

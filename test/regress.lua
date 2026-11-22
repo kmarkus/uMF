@@ -97,6 +97,15 @@ T("ext: single array spec", function() return nerr({1, 2, b=1, c=1}, ext) == 0 a
 T("ext: single __other spec", function()
      return nerr({x=true}, umf.TableSpec{sealed=true, dict={__other=umf.BoolSpec{}}}) == 0 end)
 
+T("ext: short constructors", function()
+     local v = umf.table{ sealed=true, dict={ x=umf.number{min=0}, s=umf.string{},
+					  e=umf.enum{"a"}, o=umf.object{type=A},
+					  c=umf.classof{name="c", type=A}, f=umf.func{},
+					  b=umf.bool{}, n=umf.any{} } }
+     return nerr({x=1, s="s", e="a", o=A{}, c=A, f=print, b=true, n=0}, v) == 0 and
+	nerr({x=-1, s=1, e="b", o=B{}, c=B, f=1, b=1}, v) == 8 and
+	umf.number == umf.NumberSpec and table.concat({"ok"}) == "ok" end)
+
 -- utils
 T("utils.cons", function() return utils.table_cmp(utils.cons(1, {2, 3}), {1, 2, 3}) end)
 T("utils.eval", function() return utils.eval("return 7") == 7 end)

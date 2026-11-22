@@ -16,6 +16,8 @@ local ts = tostring
 
 -- emulate module("umf", package.seeall) for lua 5.1 to 5.4+:
 -- globals defined below go into M, lookups fall back to _G.
+-- umf.string and umf.table are spec constructors: keep the libraries
+local string, table = string, table
 local M = setmetatable({}, { __index = _G })
 local _ENV = M
 if setfenv then setfenv(1, M) end
@@ -558,6 +560,18 @@ function ObjectSpec.check(self, obj, vres)
    ind_dec()
    return res
 end
+
+--- Short constructors: umf.number{min=0} is NumberSpec{min=0}.
+-- via M: string and table are locals bound to the libraries
+M.any = AnySpec
+M.number = NumberSpec
+M.string = StringSpec
+M.bool = BoolSpec
+M.func = FunctionSpec
+M.enum = EnumSpec
+M.table = TableSpec
+M.classof = ClassSpec
+M.object = ObjectSpec
 
 --- Alternatives: umf.oneof{ NumberSpec{}, StringSpec{} }.
 -- Same as a plain list of specs, but usable wherever a single spec is
