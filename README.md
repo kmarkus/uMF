@@ -20,8 +20,9 @@ uMF runs on Lua 5.1 to 5.5 and LuaJIT.
 Installation
 ------------
 
-Put `umf.lua` and `utils.lua` on the `LUA_PATH`. The only dependency is
-`ansicolors` (`luarocks install ansicolors`).
+Put `umf.lua` on the `LUA_PATH`. uMF needs the `utils` and `ansicolors` modules
+from [uutils](https://github.com/kmarkus/uutils), installed with `make install`
+there, or on the `LUA_PATH` from a checkout.
 
 Simple Example
 --------------

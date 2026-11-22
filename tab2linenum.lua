@@ -1,7 +1,7 @@
 require "lpeg"
 require "luarocks.loader"
 require "lxsh"
-require "utils"
+local utils = require "utils"
 local pretty = require "pl.pretty"
 
 function lex_luastr(data)

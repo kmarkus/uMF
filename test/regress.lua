@@ -106,26 +106,5 @@ T("ext: short constructors", function()
 	nerr({x=-1, s=1, e="b", o=B{}, c=B, f=1, b=1}, v) == 8 and
 	umf.number == umf.NumberSpec and table.concat({"ok"}) == "ok" end)
 
--- utils
-T("utils.cons", function() return utils.table_cmp(utils.cons(1, {2, 3}), {1, 2, 3}) end)
-T("utils.eval", function() return utils.eval("return 7") == 7 end)
-T("utils.pp", function()
-     -- utils captures print at load time: load a private copy
-     local out = {}
-     local p = print; print = function(s) out[#out+1] = s end
-     package.loaded.utils = nil
-     local u2 = require("utils")
-     print = p
-     package.loaded.utils, _G.utils = utils, utils
-     u2.pp({1}, "x")
-     return out[1] == "{1}" and out[2] == "x" end)
-T("utils.expand", function()
-     local r, n = utils.expand("$A $AB 50 $x $y", {A="5%", AB="y"}, false)
-     return r == "5% y 50 $x $y" and n == 2 end)
-T("utils.eval_sandbox", function()
-     local ok, r = utils.eval_sandbox("return x", {x=3})
-     return ok and r == 3 and not utils.eval_sandbox("\27Lua") end)
-T("utils.strsetlen short", function() return #utils.strsetlen("abcdef", 3, true) == 3 end)
-
 print(string.format("%s: %d match, %d DIFFER", _VERSION, pass, fail))
 os.exit(fail == 0 and 0 or 1)
