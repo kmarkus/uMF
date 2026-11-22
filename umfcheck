@@ -40,6 +40,7 @@
 local umf=require("umf")
 local utils=require("utils")
 
+AnySpec=umf.AnySpec
 NumberSpec=umf.NumberSpec
 StringSpec=umf.StringSpec
 BoolSpec=umf.BoolSpec
@@ -63,7 +64,7 @@ end
 
 function check_file(f, name)
    if not utils.file_exists(f) then
-      print("error: no "..name.." "..specfile)
+      print("error: no "..name.." "..tostring(f))
       os.exit(1)
    end
    return f
@@ -73,14 +74,14 @@ local argtab=utils.proc_args(arg)
 
 if #arg<2 or argtab['-h'] then help(); os.exit(1); end
 
-local specfile = check_file(arg[#arg])
-local modelfile = check_file(arg[#arg-1])
+local specfile = check_file(arg[#arg], "specfile")
+local modelfile = check_file(arg[#arg-1], "modelfile")
 
 local spec = dofile(specfile)
 local model = dofile(modelfile)
 
-if not spec then print("err: no spec could be loaded from file "..specfile) end
-if not model then print("err: no model could be loaded from file "..modelfile) end
+if not spec then print("err: no spec could be loaded from file "..specfile); os.exit(1) end
+if not model then print("err: no model could be loaded from file "..modelfile); os.exit(1) end
 
 if umf.check(model, spec, (not argtab['-q']))==0 then os.exit(0)
 else os.exit(2) end
