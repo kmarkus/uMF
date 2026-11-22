@@ -95,8 +95,7 @@ end
 
 
 function pp(...)
-   if type(val) == 'table' then print(tab2str(val))
-   else print(val) end
+   for i=1,select('#', ...) do print(tab2str((select(i, ...)))) end
 end
 
 function lpad(str, len, char, strlen)
@@ -141,7 +140,7 @@ function strip_ansi(str) return string.gsub(str, "\27%[%d+m", "") end
 -- @param dots boolean, if true append dots to truncated strings.
 -- @return processed string.
 function strsetlen(str, len, dots)
-   if string.len(str) > len and dots then
+   if string.len(str) > len and dots and len >= 4 then
       return string.sub(str, 1, len - 4) .. "... "
    elseif string.len(str) > len then
       return string.sub(str, 1, len)
@@ -201,14 +200,14 @@ end
 
 function cons(car, cdr)
    local new_array = {car}
-  for _,v in cdr do
+  for _,v in ipairs(cdr) do
      table.insert(new_array, v)
   end
   return new_array
 end
 
 function flatten(t)
-   function __flatten(res, t)
+   local function __flatten(res, t)
       if type(t) == 'table' then
 	 for k,v in ipairs(t) do __flatten(res, v) end
       else
@@ -316,7 +315,7 @@ function andt(...)
 end
 
 function eval(str)
-   return assert(loadstring(str))()
+   return assert((loadstring or load)(str))()
 end
 
 function unrequire(m)
@@ -439,6 +438,7 @@ function gen_do_every(s, ns, thunk, gettime)
    local next = { sec=0, nsec=0 }
    local cur = { sec=0, nsec=0 }
    local inc = { sec=s, nsec=ns }
+   local time = require("time")
 
    return function()
 	     cur.sec, cur.nsec = gettime()
@@ -460,17 +460,15 @@ function expand(tpl, params, warn)
    if warn==nil then warn=true end
    local unexp = 0
 
-   -- expand
-   for name,val in pairs(params) do tpl=string.gsub(tpl, "%$"..name, val) end
-
-   -- check for unexpanded
-   local _,_,res= string.find(tpl, "%$([%a%d_]+)")
-   if res then
-      if warn then print("expand: warning, no param for variable $" .. res) end
-      unexp = unexp + 1
-   end
-
-   return tpl, unexp
+   -- single pass: no '%' interpretation in values, no $A vs $AB clash
+   local res = string.gsub(tpl, "%$([%a%d_]+)",
+			   function(name)
+			      local val = params[name]
+			      if val ~= nil then return tostring(val) end
+			      if warn then print("expand: warning, no param for variable $" .. name) end
+			      unexp = unexp + 1
+			   end)
+   return res, unexp
 end
 
 local function pcall_bt(func, ...)
