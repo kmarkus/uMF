@@ -384,6 +384,11 @@ Future work
 - creating parent links (`create_parent_ref()`)
 - generic model traversal
 
+License
+-------
+
+BSD-3-Clause, see `LICENSE`.
+
 Acknowledgement
 ---------------
 
