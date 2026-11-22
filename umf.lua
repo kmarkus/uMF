@@ -324,33 +324,69 @@ local function key2ctx(key)
    return "["..ts(key).."]"
 end
 
+-- scratch vres sharing the current context, nil if vres is nil
+local function vres_scratch(vres)
+   if not vres then return nil end
+   local ctx = {}
+   for i,v in ipairs(vres.context) do ctx[i]=v end
+   return { msgs={}, err=0, warn=0, inf=0, context=ctx }
+end
+
+--- Append the messages of a list of scratch vres to vres.
+function vres_merge(vres, list)
+   if not vres or not list then return end
+   for _,sv in ipairs(list) do
+      for _,m in ipairs(sv.msgs) do vres.msgs[#vres.msgs+1] = m end
+      vres.err, vres.warn, vres.inf = vres.err+sv.err, vres.warn+sv.warn, vres.inf+sv.inf
+   end
+end
+
+--- Check entry against a spec or a list of alternative specs.
+-- Each alternative is checked once, its messages go to a scratch vres.
+-- An instance with a matching ObjectSpec is only checked against that.
+-- @return true if one alternative matches
+-- @return list of scratch vres to report with vres_merge: the matching
+--         one on success, all on failure
+function match_specs(entry, specs, vres)
+   if specs == nil then specs = {}
+   elseif is_spec(specs) then specs = { specs } end
+
+   if type(specs) ~= 'table' then
+      add_msg(vres, "err", "invalid spec "..ts(specs)..": not a Spec or a list of Specs")
+      return false
+   end
+
+   for _,spec in ipairs(specs) do
+      if not is_spec(spec) then
+	 add_msg(vres, "err", "invalid spec "..ts(spec)..": not an umf.Spec instance")
+	 return false
+      end
+   end
+
+   if uoo_type(entry) == 'instance' then
+      for _,spec in ipairs(specs) do
+	 if instance_of(ObjectSpec, spec) and uoo_type(spec.type) == 'class' and
+	    instance_of(spec.type, entry) then
+	    log("match_specs: strongly matched type", spec.type.name)
+	    specs = { spec }
+	    break
+	 end
+      end
+   end
+
+   local failed = {}
+   for _,spec in ipairs(specs) do
+      local sv = vres_scratch(vres)
+      if spec:check(entry, sv) then return true, { sv } end
+      failed[#failed+1] = sv
+   end
+   return false, failed
+end
+
 --- Validate a table spec.
 -- This is the most important function of uMF.
 function TableSpec.check(self, obj, vres)
    local ret=true
-
-   local function is_a_valid_spec(entry, spec_tab, vres)
-      ind_inc()
-      spec_tab = spec_tab or {}
-      -- if entry is an Object and we have a matching ObjectSpec then
-      -- prefer that!
-      if uoo_type(entry) == 'instance' then
-	 for _,spec in ipairs(spec_tab) do
-	    if instance_of(ObjectSpec, spec) and instance_of(spec.type, entry) then
-	       log("is_a_valid_spec: strongly matched type ", spec.type.name)
-	       ind_dec()
-	       return spec:check(entry, vres)
-	    end
-	 end
-      end
-      ind_dec()
-      -- brute force
-      for _,spec in ipairs(spec_tab) do
-	 if spec:check(entry, vres) then return true end
-      end
-      return false
-   end
-
 
    --- Check if entry is a legal array entry type.
    local function check_array_entry(entry,i)
@@ -359,35 +395,26 @@ function TableSpec.check(self, obj, vres)
       log("check_array_entry: IN  #", i, " '", entry, "'")
 
       local sealed = self.sealed == 'both' or self.sealed=='array'
-      local arr_spec = self.array or {}
+      local ok, res = match_specs(entry, self.array, vres)
 
-      -- if entry is valid, there is nothing else to do:
-      if is_a_valid_spec(entry, arr_spec) then
+      if ok then
 	 log("check_array_entry: OUT #", i, " Ok!")
-	 vres_pop_context(vres, depth)
-	 ind_dec();
-	 return
-      end
-
-      -- Invalid or illegal
-      if sealed then
-	 log("check_array_entry: #", i, " FAILED! (illegal/invalid), because:")
+	 vres_merge(vres, res)
+      elseif sealed then
+	 log("check_array_entry: OUT #", i, " FAILED (illegal/invalid)")
 	 add_msg(vres, "err", "illegal/invalid array entry #"..ts(i).." '".. ts(entry).."'. Error(s) follow:")
-	 is_a_valid_spec(entry, arr_spec, vres)
-	 -- vres_add_newline(vres)
-	 log("check_array_entry: OUT #", i, " FAILED")
+	 vres_merge(vres, res)
 	 ret=false
       else
-	 log("check_array_entry: OUT #", i, " FAILED! (but unsealed)")
+	 log("check_array_entry: OUT #", i, " FAILED (but unsealed)")
 	 add_msg(vres, "inf", "unknown entry '"..tostring(entry) .."' in array part")
       end
-      ind_dec()
       vres_pop_context(vres, depth)
+      ind_dec()
    end
 
    --- Check if key=entry are valid for the TableSpec 'self'.
    local function check_dict_entry(entry, key)
-      -- if key=='__other' then return end ?
       ind_inc()
       log("check_dict_entry: ", key, "='", entry, "'")
       local depth = vres_push_context(vres, key2ctx(key))
@@ -395,38 +422,32 @@ function TableSpec.check(self, obj, vres)
       -- a model key '__other' must not pick up the spec list
       local kspec = key ~= '__other' and self.dict[key] or nil
 
-      -- known key, check it.
       if kspec then
-	 if not kspec:check(entry, vres) then
-	    ret=false
-	    log("key '", key, "' found but spec checking failed")
-	 else
-	    log("key '", key, "' found and spec checking OK")
-	 end
+	 -- known key, check it.
+	 local ok, res = match_specs(entry, kspec, vres)
+	 vres_merge(vres, res)
+	 if not ok then ret=false end
+	 log("key '", key, "' found, spec check result:", ok)
       elseif not self.dict.__other and sealed then
 	 -- unknown key, no __other and sealed -> err!
 	 add_msg(vres, "err", "illegal field '"..ts(key).."' in sealed dict (value: "..tostring(entry)..")")
 	 ret=false
-      elseif is_a_valid_spec(entry, self.dict.__other) then
-	 -- unknown key, but __other legitimizes entry
-	 log("found matching spec in __other table")
-      elseif not is_a_valid_spec(entry, self.dict.__other) then
-	 -- unknown key AND __other does not legitimize: if unsealed ->
-	 -- fine. If sealed, report the errors of all checks.
-	 if sealed then
-	    -- gadd_msg(vres, "err", "checking __other failed for undeclared key '".. key.."' in sealed dict. Error(s) follow:")
-	    -- add errmsg of __other check
-	    is_a_valid_spec(entry, self.dict.__other, vres)
-	    -- vres_add_newline(vres)
+      else
+	 local ok, res = match_specs(entry, self.dict.__other, vres)
+	 if ok then
+	    log("found matching spec in __other table")
+	    vres_merge(vres, res)
+	 elseif sealed then
+	    -- unknown key AND __other does not legitimize: report all errors
+	    vres_merge(vres, res)
 	    log("checking __other for key ", key, " failed")
 	    ret=false
 	 else
 	    add_msg(vres, "inf", "ignoring unknown field "..ts(key).." in unsealed dict")
 	 end
-      else error("should not get here") end
+      end
       vres_pop_context(vres, depth)
       ind_dec()
-      return
    end
 
    -- Check that all non optional dict entries are there
