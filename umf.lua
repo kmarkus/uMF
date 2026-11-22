@@ -153,6 +153,8 @@ EnumSpec=class("EnumSpec", Spec)
 TableSpec=class("TableSpec", Spec)
 ClassSpec=class("ClassSpec", TableSpec)
 ObjectSpec=class("ObjectSpec", TableSpec)
+OneOfSpec=class("OneOfSpec", Spec)
+OptionalSpec=class("OptionalSpec", Spec)
 
 -- concatenate the validation context in a smart way, ie. no dots
 -- before [].
@@ -457,7 +459,8 @@ function TableSpec.check(self, obj, vres)
       local nopts={}
       local optional=self.optional or {}
       for field,spec in pairs(self.dict) do
-	 if field~='__other' and not utils.table_has(optional, field) then
+	 if field~='__other' and not utils.table_has(optional, field) and
+	    not (is_spec(spec) and instance_of(OptionalSpec, spec)) then
 	    nopts[#nopts+1] = field
 	 end
       end
@@ -554,6 +557,28 @@ function ObjectSpec.check(self, obj, vres)
    log("validated object spec of type ", self.name, ": ", res)
    ind_dec()
    return res
+end
+
+--- Alternatives: umf.oneof{ NumberSpec{}, StringSpec{} }.
+-- Same as a plain list of specs, but usable wherever a single spec is
+-- expected and explicit about the intent.
+function oneof(specs) return OneOfSpec(specs) end
+
+function OneOfSpec.check(self, obj, vres)
+   local ok, res = match_specs(obj, utils.imap(function(s) return s end, self), vres)
+   vres_merge(vres, res)
+   return ok
+end
+
+--- Optional dict field: x = umf.optional(NumberSpec{}).
+-- Alternative to listing the field name in the 'optional' table.
+-- @param spec a spec or a list of alternative specs
+function optional(spec) return OptionalSpec{ spec=spec } end
+
+function OptionalSpec.check(self, obj, vres)
+   local ok, res = match_specs(obj, self.spec, vres)
+   vres_merge(vres, res)
+   return ok
 end
 
 --- Resolve string links to objects

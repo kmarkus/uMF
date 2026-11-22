@@ -35,6 +35,25 @@ Vector3DSpec = umf.TableSpec{
 }
 ```
 
+uMF runs on Lua 5.1 to 5.5 and LuaJIT.
+
+**Shortcuts**
+
+These forms are equivalent to the long ones and can be mixed with them:
+
+| Long form                                   | Shortcut                                  |
+|---------------------------------------------|-------------------------------------------|
+| `x = NumberSpec{}` plus `optional={'x'}`    | `x = umf.optional(NumberSpec{})`          |
+| `array = { NumberSpec{} }`                  | `array = NumberSpec{}`                    |
+| `__other = { StringSpec{} }`                | `__other = StringSpec{}`                  |
+| list of alternatives `{ A, B }`             | `umf.oneof{ A, B }`, also as a dict value |
+| `sealed = 'both'`                           | `sealed = true`                           |
+
+A dict value can be a list of alternatives, e.g. `x = { NumberSpec{},
+StringSpec{} }`. `umf.oneof{}` does the same and also works where a single spec
+is expected, e.g. nested inside another list.
+
+Debug output of the checker is enabled with `umf.log_enabled = true`.
 
 Defining Model Elements
 -----------------------
@@ -93,28 +112,17 @@ Pitfalls
 --------
 
 It's a common pitfall to assign a spec class instead of an instance
-when defining a constraint model.
+when defining a constraint model (`NumberSpec` instead of `NumberSpec{}`).
+The check then reports `invalid spec ...: not an umf.Spec instance`.
+
+`sealed` only accepts `'both'`, `'dict'`, `'array'`, `true` and `false`;
+other values raise an error when the spec is created.
 
 Future work
 -----------
 
 - json-schema import/export
 - ECore import/export
-
-Known issues
--------------
-
-**Problem**
-
-Obscure error: "umf.lua:128: instance_of: second argument not an
-instance" if a spec is declared as a plain table instead of a Spec
-instance.
-
-**Solution**
-
-Extend instance_of to return an error msg instead of
-assert'ing. Better: it's caused by an invalid spec, hence the spec
-should be validated against against the metaspec.
 
 Acknowledgement
 ---------------
