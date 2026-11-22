@@ -1,3 +1,11 @@
+--
+-- This file is part of uMF.
+--
+-- (C) 2013-2026 Markus Klotzbuecher, mk@mkio.de
+--
+-- SPDX-License-Identifier: BSD-3-Clause
+--
+
 require "lpeg"
 require "luarocks.loader"
 require "lxsh"
