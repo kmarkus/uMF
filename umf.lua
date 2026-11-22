@@ -486,8 +486,10 @@ function TableSpec.check(self, obj, vres)
    local name = self.name or "unnamed"
    -- local depth = vres_push_context(vres, name)
    if self.precheck then
+      local nerr = vres and vres.err
       ret = self.precheck(self, obj, vres)
       assert(type(ret)=='boolean', "precheck did not return boolean")
+      if not ret and vres and vres.err == nerr then add_msg(vres, "err", "precheck failed") end
    end
 
 
@@ -499,8 +501,10 @@ function TableSpec.check(self, obj, vres)
    end
 
    if self.postcheck and ret then
+      local nerr = vres and vres.err
       ret = self.postcheck(self, obj, vres)
       assert(type(ret)=='boolean', "postcheck did not return boolean")
+      if not ret and vres and vres.err == nerr then add_msg(vres, "err", "postcheck failed") end
    end
 
 
@@ -609,13 +613,14 @@ end
 function check(obj, spec, verb)
    -- spec must be an instance of Spec:
    log("check: IN")
-   if verb then print("checking spec "..(spec.name or "unnamed")) end
-   local ok, ret = pcall(instance_of, Spec, spec)
-   if not ok then print("err: second argument not an Object (should be Spec instance)"); return false
-   elseif ok and not ret then print("err: spec not an instance of umf.Spec\n"); return false end
+   if not is_spec(spec) then print("err: spec not an instance of umf.Spec"); return false end
+   if verb then print("checking spec "..ts(spec.name or "unnamed")) end
 
    local vres = { msgs={}, err=0, warn=0, inf=0, context={} }
-   spec:check(obj, vres)
+   if not spec:check(obj, vres) and vres.err == 0 then
+      -- e.g. a precheck/postcheck returned false without a message
+      add_msg(vres, "err", "spec "..ts(spec.name or "unnamed").." check failed")
+   end
    log("check: OUT")
    if verb then print_vres(vres) end
    return vres.err, vres
