@@ -9,14 +9,17 @@
 -- Just enough for umf modeling.
 
 local color=true
-local logmsgs = true
 
 local ac=require("ansicolors")
 local utils=require("utils")
 local ts = tostring
--- local strict = require("strict")
 
-module("umf", package.seeall)
+-- emulate module("umf", package.seeall) for lua 5.1 to 5.4+:
+-- globals defined below go into M, lookups fall back to _G.
+local M = setmetatable({}, { __index = _G })
+local _ENV = M
+if setfenv then setfenv(1, M) end
+_G.umf = M -- compat: users rely on the global set by module()
 
 -- log stuff
 local ind, indmul, indchar = 0, 4, ' '
@@ -562,3 +565,5 @@ function check(obj, spec, verb)
    if verb then print_vres(vres) end
    return vres.err, vres
 end
+
+return M

@@ -4,11 +4,18 @@
 --
 
 local type, pairs, ipairs, setmetatable, getmetatable, assert, table,
-   print, tostring, string, io, unpack, error, load, pcall, debug, xpcall = type,
+   print, tostring, string, io, error, load, pcall, debug, xpcall,
+   select, require, package, setfenv, loadstring, math, _G = type,
    pairs, ipairs, setmetatable, getmetatable, assert, table, print,
-   tostring, string, io, unpack, error, load, pcall, debug, xpcall
+   tostring, string, io, error, load, pcall, debug, xpcall,
+   select, require, package, setfenv, loadstring, math, _G
+local unpack = unpack or table.unpack
 
-module('utils')
+-- emulate module('utils') for lua 5.1 to 5.4+
+local M = {}
+local _ENV = M
+if setfenv then setfenv(1, M) end
+_G.utils = M -- compat: users rely on the global set by module()
 
 -- increment major on API breaks
 -- increment minor on non breaking changes
@@ -186,7 +193,7 @@ end
 
 function cdr(tab)
    local new_array = {}
-   for i = 2, table.getn(tab) do
+   for i = 2, #tab do
       table.insert(new_array, tab[i])
    end
    return new_array
@@ -477,7 +484,15 @@ end
 -- @return function or error message
 function eval_sandbox(unsafe_code, env)
    env = env or {}
-   local unsafe_fun, msg = load(unsafe_code, nil, 't', env)
+   local unsafe_fun, msg
+   if setfenv then
+      -- lua 5.1 loadstring also accepts bytecode: reject it
+      if string.byte(unsafe_code, 1) == 27 then return false, "binary chunk rejected" end
+      unsafe_fun, msg = loadstring(unsafe_code)
+      if unsafe_fun then setfenv(unsafe_fun, env) end
+   else
+      unsafe_fun, msg = load(unsafe_code, nil, 't', env)
+   end
    if not unsafe_fun then return false, msg end
    return pcall_bt(unsafe_fun)
 end
@@ -551,3 +566,4 @@ function max(x1, x2) if x1>x2 then return x1; else return x2; end end
 -- @return the minimum
 function min(x1, x2) if x1>x2 then return x2; else return x1; end end
 
+return M
