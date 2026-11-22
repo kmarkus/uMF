@@ -15,13 +15,13 @@ end
 
 function build_ident_tree(tl)
    local function is_named_ident(i)
-      return tl[i].kind == 'identifier' and 
+      return tl[i+2] and tl[i].kind == 'identifier' and
 	 tl[i+1].kind == 'operator' and tl[i+1].text == '=' and
 	 tl[i+2].kind == 'operator' and tl[i+2].text == '{' 
    end
 
    local function is_unnamed_ident(i)
-      return tl[i].kind == 'identifier' and 
+      return tl[i+1] and tl[i].kind == 'identifier' and
 	 tl[i+1].kind == 'operator' and tl[i+1].text == '{'
    end
 
@@ -44,7 +44,7 @@ function build_ident_tree(tl)
 	 elseif is_unnamed_ident(i) then
 	    local newtab = { _estart=tl[i] }
 	    local top_of_stack = stack[#stack]
-	    top_of_stack[#top_of_stack] = newtab -- push to array
+	    top_of_stack[#top_of_stack+1] = newtab -- push to array
 	    stack[#stack+1] = newtab -- push
 	    i=i+1
 	    -- missing: simple
@@ -64,7 +64,7 @@ function build_ident_tree(tl)
       if v.kind=='keyword' and v.text=='return' then return_index=i end
    end
 
-   if i==0 then error("invalid model, not missing 'return' keyword found") end
+   if return_index==0 then error("invalid model, no 'return' keyword found") end
    return __build_ident_tree(return_index+1)
 end
 
